@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model SME {
+  id             String      @id @default(cuid())
+  companyName    String
+  uniqueLinkId   String      @unique
+  bannerImageUrl String?
+  createdAt      DateTime    @default(now())
+  customers      Customer[]
+}
+
+model Customer {
+  id          String       @id @default(cuid())
+  smeId       String
+  name        String
+  birthDate   DateTime
+  email       String
+  gender      String
+  points      Int          @default(0)
+  tier        String       @default("Bronze")
+  createdAt   DateTime     @default(now())
+  sme         SME          @relation(fields: [smeId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  customerId  String
+  points      Int
+  description String
+  createdAt   DateTime @default(now())
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
