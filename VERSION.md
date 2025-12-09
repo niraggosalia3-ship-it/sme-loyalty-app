@@ -1,6 +1,60 @@
 # Version History
 
-## Version 0.1 (Current) - December 9, 2025
+## Version 0.2 (Current) - December 9, 2025
+
+### Features Included:
+✅ **SME Customer Management Dashboard**
+- New page for each SME to view their customers
+- Inline editing of customer information (Name, Email, Birth Date, Gender, Points, Tier)
+- Expandable customer cards showing transaction history
+- Transaction table with: Transaction ID, Customer ID, Date, Amount (ex. tax), Tax Amount, Points, Description
+- Data isolation - each SME can only view their own customers
+
+✅ **Admin Dashboard Updates**
+- "View Customers" button added under each SME
+- Renamed "Copy Link" to "Customer Registration Link"
+- Vertical button layout (buttons stacked)
+
+✅ **Database Updates**
+- Added `amount` and `taxAmount` fields to Transaction model
+- Enhanced transaction tracking capabilities
+
+✅ **API Routes**
+- `/api/smes/id/[smeId]` - Get SME by ID
+- `/api/smes/id/[smeId]/customers` - Get customers for SME (with data isolation)
+- `/api/customers/[customerId]/update` - Update customer information
+- Enhanced transaction endpoints with amount/tax data
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with SQLite
+- Tailwind CSS
+- React QR Code library
+
+### Git Tag:
+```bash
+git checkout v0.2
+```
+
+### Commit Hash:
+Check with: `git log --oneline -1`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.2
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.2
+
+# Or create a new branch from this version
+git checkout -b restore-v0.2 v0.2
+```
+
+---
+
+## Version 0.1 - December 9, 2025
 
 ### Features Included:
 ✅ **Admin Dashboard**
