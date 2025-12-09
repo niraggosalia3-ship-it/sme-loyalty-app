@@ -69,7 +69,35 @@ import QRCode from 'react-qr-code'
 
 ---
 
-### 3. Missing Closing Tags in JSX
+### 3. Next.js Route Conflict Error
+
+**Error:**
+```
+Error: You cannot use different slug names for the same dynamic path ('linkId' !== 'smeId').
+```
+
+**Root Cause:**
+- Next.js doesn't allow different dynamic parameter names at the same route level
+- Example: `/api/smes/[linkId]` and `/api/smes/[smeId]` conflict
+
+**Solution:**
+- Move one route to a different path level
+- Example: Move `/api/smes/[smeId]` to `/api/smes/id/[smeId]`
+- Or use a different naming convention
+
+**Prevention:**
+- Plan route structure before creating dynamic routes
+- Use consistent parameter names or different path levels
+- Check for conflicts when adding new routes
+
+**When to Use:**
+- ✅ Getting route conflict errors
+- ✅ Adding new dynamic routes
+- ✅ Server won't start due to route errors
+
+---
+
+### 4. Missing Closing Tags in JSX
 
 **Error:**
 ```
@@ -88,7 +116,7 @@ Unexpected token `div`. Expected jsx identifier
 
 ---
 
-### 4. Prisma Schema Changes Not Applied
+### 5. Prisma Schema Changes Not Applied
 
 **Error:**
 - Database schema out of sync
@@ -209,6 +237,14 @@ When page goes blank or errors occur, check in this order:
 - **Learning:** Next.js file uploads require FormData, not JSON
 
 ### Session 4: Cache Corruption
+- **Issue:** Blank page after refresh (multiple times)
+- **Solution:** Clear `.next` folder and restart
+- **Learning:** Next.js cache can corrupt during hot reload - always have cleanup script ready
+
+### Session 5: Route Conflicts
+- **Issue:** "Cannot use different slug names" error when adding new routes
+- **Solution:** Moved `/api/smes/[smeId]` to `/api/smes/id/[smeId]` to avoid conflict with `[linkId]`
+- **Learning:** Next.js doesn't allow different dynamic parameter names at the same route level
 - **Issue:** Blank page after refresh (multiple times)
 - **Solution:** Clear `.next` folder and restart
 - **Learning:** Next.js cache can corrupt during hot reload - always have cleanup script ready

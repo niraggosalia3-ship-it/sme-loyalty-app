@@ -11,6 +11,7 @@ interface Customer {
   tier: string
   sme: {
     companyName: string
+    bannerImageUrl: string | null
   }
 }
 
@@ -75,13 +76,25 @@ export default function CustomerDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome, {customer.name}!
-          </h1>
-          <p className="text-gray-600 mb-6">
-            {customer.sme.companyName} - Loyalty Program
-          </p>
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          {/* Banner Image */}
+          {customer.sme.bannerImageUrl && (
+            <div className="w-full h-48 bg-gray-200 overflow-hidden">
+              <img
+                src={customer.sme.bannerImageUrl}
+                alt={`${customer.sme.companyName} banner`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          
+          <div className="p-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome, {customer.name}!
+            </h1>
+            <p className="text-gray-600 mb-6">
+              {customer.sme.companyName} - Loyalty Program
+            </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
@@ -93,6 +106,7 @@ export default function CustomerDashboard() {
               <h2 className="text-sm font-medium text-amber-600 mb-2">Current Tier</h2>
               <p className="text-4xl font-bold text-amber-900">{customer.tier}</p>
             </div>
+          </div>
           </div>
         </div>
 

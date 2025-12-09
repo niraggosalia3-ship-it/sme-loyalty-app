@@ -252,12 +252,20 @@ export default function AdminDashboard() {
                               Created: {new Date(sme.createdAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <button
-                            onClick={() => copyToClipboard(link)}
-                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 whitespace-nowrap"
-                          >
-                            Copy Link
-                          </button>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => copyToClipboard(link)}
+                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 whitespace-nowrap"
+                            >
+                              Customer Registration Link
+                            </button>
+                            <Link
+                              href={`/sme/${sme.id}`}
+                              className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 whitespace-nowrap inline-block text-center"
+                            >
+                              View Customers
+                            </Link>
+                          </div>
                         </div>
                         <div className="mt-2">
                           <p className="text-xs text-gray-400 break-all">{link}</p>

@@ -12,6 +12,7 @@ export async function GET(
         sme: {
           select: {
             companyName: true,
+            bannerImageUrl: true,
           },
         },
       },

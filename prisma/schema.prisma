@@ -38,6 +38,8 @@ model Transaction {
   customerId  String
   points      Int
   description String
+  amount      Float?   // Transaction amount (before tax)
+  taxAmount   Float?   // Tax amount
   createdAt   DateTime @default(now())
   customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }

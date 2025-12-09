@@ -6,9 +6,28 @@ export async function GET(
   { params }: { params: { customerId: string } }
 ) {
   try {
+    // Verify customer exists (for data isolation)
+    const customer = await prisma.customer.findUnique({
+      where: { id: params.customerId },
+      select: { id: true },
+    })
+
+    if (!customer) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+    }
+
     const transactions = await prisma.transaction.findMany({
       where: { customerId: params.customerId },
       orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        customerId: true,
+        points: true,
+        description: true,
+        amount: true,
+        taxAmount: true,
+        createdAt: true,
+      },
     })
 
     return NextResponse.json(transactions)
