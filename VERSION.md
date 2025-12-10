@@ -1,6 +1,91 @@
 # Version History
 
-## Version 0.3 (Current) - December 9, 2025
+## Version 0.4 (Current) - December 9, 2025
+
+### Features Included:
+✅ **QR Code Transaction Tracking**
+- QR code scanning for customer lookup
+- Quick transaction entry form (moved to top)
+- Real-time points calculation based on configurable multiplier
+- Automatic tier upgrades on transaction
+- Transaction history display on scan page
+
+✅ **Points & Tier Management**
+- Configurable points multiplier per SME (in program editor)
+- Automatic tier upgrade logic
+- Tier upgrade notifications (SME scan page + customer dashboard)
+- Points calculation: amount × multiplier
+
+✅ **Benefit System**
+- Automatic benefit unlocking on tier upgrade
+- QR code-based benefit redemption
+- Benefits display from current tier + all previous tiers
+- Benefit status tracking (available/used)
+- Redemption tracking with dates
+
+✅ **Customer QR Codes**
+- Automatic QR code generation on customer creation
+- QR code display on customer dashboard (small, scannable)
+- QR code display on SME scan page
+- Unique QR code ID format: CUST-XXXXXXXX
+
+✅ **Enhanced Customer Dashboard**
+- Tier upgrade notification (if upgraded in last 24 hours)
+- Navigation buttons (QR Code, Benefits, History, Program)
+- Benefits display from all eligible tiers
+- Smooth scroll navigation
+- Link to loyalty program page
+
+✅ **Enhanced SME Scan Page**
+- Transaction form at top (after customer name)
+- Customer QR code display
+- All benefits from eligible tiers
+- Transaction history table at bottom
+- Real-time transaction updates
+
+✅ **Database Updates**
+- Added `pointsMultiplier` to SME model
+- Created `CustomerBenefit` model
+- Added `qrCodeId` to Customer model
+- Added `lastTierUpgradeDate` to Customer model
+
+✅ **New API Endpoints**
+- `POST /api/transactions` - Create transaction with auto-calc
+- `GET /api/customer/qr/[qrCodeId]` - Get customer by QR code
+- `POST /api/benefits/redeem` - Redeem benefit by ID
+- `POST /api/benefits/redeem-by-name` - Redeem benefit by name
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with SQLite
+- Tailwind CSS
+- React QR Code library
+- html5-qrcode library
+
+### Git Tag:
+```bash
+git checkout v0.4
+```
+
+### Commit Hash:
+Check with: `git log --oneline -1`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.4
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.4
+
+# Or create a new branch from this version
+git checkout -b restore-v0.4 v0.4
+```
+
+---
+
+## Version 0.3 - December 9, 2025
 
 ### Features Included:
 ✅ **Program Page with Expanded Benefits**
