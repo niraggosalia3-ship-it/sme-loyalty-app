@@ -1,6 +1,82 @@
 # Version History
 
-## Version 0.4 (Current) - December 9, 2025
+## Version 0.5 (Current) - December 10, 2025
+
+### Features Included:
+✅ **Free Wallet Integration**
+- Web-based wallet pass solution (100% free, no paid accounts)
+- One-click "Add to Wallet" button on customer dashboard
+- Wallet pass page with beautiful card design
+- Auto-updating points and tier (refreshes every 30 seconds)
+- Save to home screen functionality (iOS/Android)
+- Works on all devices (mobile and desktop)
+- QR code included in wallet card
+
+✅ **Customer Management Enhancements**
+- "View Customer" link in SME customer management page
+- Direct access to customer scan view from customer list
+- Improved customer workflow
+
+✅ **Scan Page Improvements**
+- Transaction form moved to top (after customer name)
+- Transaction history table added at bottom
+- Complete customer view in one page
+- Real-time transaction updates
+
+✅ **Customer Dashboard Enhancements**
+- Navigation buttons (QR Code, Benefits, History, Program)
+- Smooth scroll navigation
+- Link to loyalty program page
+- Tier upgrade notifications
+- Enhanced benefits display
+
+✅ **Database Updates**
+- Added `WalletPass` model for wallet pass tracking
+- Stores device tokens for future push notifications
+- Tracks pass authentication tokens
+
+✅ **New Pages**
+- `/passes/[customerId]` - Wallet pass page
+- Auto-refreshing pass display
+- Professional wallet card design
+
+✅ **New API Endpoints**
+- `POST /api/passes/generate` - Generate wallet pass
+- `GET /api/passes/[customerId]/update` - Update pass data
+- `POST /api/passes/register-device` - Register device tokens
+- `GET /api/passes/[customerId]/google-wallet` - Google Wallet pass data
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with SQLite
+- Tailwind CSS
+- React QR Code library
+- Web-based wallet solution (no certificates needed)
+
+### Git Tag:
+```bash
+git checkout v0.5
+```
+
+### Commit Hash:
+Check with: `git log --oneline -1`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.5
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.5
+
+# Or create a new branch from this version
+git checkout -b restore-v0.5 v0.5
+```
+
+---
+
+## Version 0.4 - December 9, 2025
 
 ### Features Included:
 ✅ **QR Code Transaction Tracking**
