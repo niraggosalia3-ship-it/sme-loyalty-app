@@ -28,6 +28,7 @@ interface Transaction {
 interface SME {
   id: string
   companyName: string
+  uniqueLinkId: string
   bannerImageUrl: string | null
 }
 
@@ -55,7 +56,12 @@ export default function SMEDashboard() {
       const res = await fetch(`/api/smes/id/${smeId}`)
       if (res.ok) {
         const data = await res.json()
-        setSme(data)
+        setSme({
+          id: data.id,
+          companyName: data.companyName,
+          uniqueLinkId: data.uniqueLinkId,
+          bannerImageUrl: data.bannerImageUrl,
+        })
       } else {
         // Fallback: fetch from all SMEs
         const allSMEs = await fetch('/api/smes').then(r => r.json())
@@ -64,6 +70,7 @@ export default function SMEDashboard() {
           setSme({
             id: foundSME.id,
             companyName: foundSME.companyName,
+            uniqueLinkId: foundSME.uniqueLinkId,
             bannerImageUrl: foundSME.bannerImageUrl,
           })
         }
@@ -187,12 +194,27 @@ export default function SMEDashboard() {
               Manage your customers and view transaction history
             </p>
           </div>
-          <Link
-            href={`/sme/${smeId}/program`}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm whitespace-nowrap"
-          >
-            Edit Program
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/form/${sme.uniqueLinkId}`}
+              target="_blank"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm whitespace-nowrap"
+            >
+              + Add Customer
+            </Link>
+            <Link
+              href={`/sme/${smeId}/scan`}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm whitespace-nowrap"
+            >
+              Scan QR Code
+            </Link>
+            <Link
+              href={`/sme/${smeId}/program`}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm whitespace-nowrap"
+            >
+              Edit Program
+            </Link>
+          </div>
         </div>
 
         {/* Banner */}

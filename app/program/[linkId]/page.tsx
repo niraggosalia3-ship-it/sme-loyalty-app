@@ -21,6 +21,7 @@ interface Program {
   programName: string | null
   programDescription: string | null
   pointsEarningRules: string | null
+  pointsMultiplier: number
   primaryColor: string | null
   secondaryColor: string | null
   tiers: Tier[]
@@ -134,19 +135,24 @@ export default function ProgramPage() {
         </div>
 
         {/* How to Earn Points Section */}
-        {program.pointsEarningRules && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">🎯</span>
-              How to Earn Points
-            </h2>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+            <span className="mr-2">🎯</span>
+            How to Earn Points
+          </h2>
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-lg font-semibold text-blue-900">
+              Earn {program.pointsMultiplier || 1} point{(program.pointsMultiplier || 1) !== 1 ? 's' : ''} for every $1 you spend!
+            </p>
+          </div>
+          {program.pointsEarningRules && (
             <div className="prose max-w-none">
               <p className="text-gray-700 whitespace-pre-line">
                 {program.pointsEarningRules}
               </p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Tier Progression Section */}
         {program.tiers && program.tiers.length > 0 && (

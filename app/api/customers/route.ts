@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { randomBytes } from 'crypto'
+
+function generateQRCodeId(): string {
+  return 'CUST-' + randomBytes(8).toString('hex').toUpperCase()
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +43,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Generate unique QR code ID
+    let qrCodeId = generateQRCodeId()
+    let exists = await prisma.customer.findUnique({
+      where: { qrCodeId },
+    })
+    
+    // Ensure uniqueness
+    while (exists) {
+      qrCodeId = generateQRCodeId()
+      exists = await prisma.customer.findUnique({
+        where: { qrCodeId },
+      })
+    }
+
     // Create customer with default values
     const customer = await prisma.customer.create({
       data: {
@@ -48,6 +67,7 @@ export async function POST(request: NextRequest) {
         gender,
         points: 0,
         tier: 'Bronze',
+        qrCodeId,
       },
     })
 

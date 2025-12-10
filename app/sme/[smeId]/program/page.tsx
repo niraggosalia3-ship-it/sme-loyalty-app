@@ -38,6 +38,7 @@ export default function ProgramEditor() {
     programName: '',
     programDescription: '',
     pointsEarningRules: '',
+    pointsMultiplier: 1.0,
     primaryColor: '#3B82F6',
     secondaryColor: '#60A5FA',
   })
@@ -57,6 +58,7 @@ export default function ProgramEditor() {
           programName: data.programName || '',
           programDescription: data.programDescription || '',
           pointsEarningRules: data.pointsEarningRules || '',
+          pointsMultiplier: data.pointsMultiplier || 1.0,
           primaryColor: data.primaryColor || '#3B82F6',
           secondaryColor: data.secondaryColor || '#60A5FA',
         })
@@ -102,7 +104,12 @@ export default function ProgramEditor() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          programName: formData.programName,
+          programDescription: formData.programDescription,
+          pointsEarningRules: formData.pointsEarningRules,
+          pointsMultiplier: formData.pointsMultiplier,
+          primaryColor: formData.primaryColor,
+          secondaryColor: formData.secondaryColor,
           tiers: tiers.map((tier, index) => ({
             ...tier,
             order: index,
@@ -237,6 +244,34 @@ export default function ProgramEditor() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md"
                 placeholder="Explain how customers can earn points...&#10;Example:&#10;• 1 point per $1 spent&#10;• 10 points for referrals&#10;• 5 points for reviews"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Points Multiplier
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  value={formData.pointsMultiplier}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pointsMultiplier: parseFloat(e.target.value) || 1.0,
+                    })
+                  }
+                  className="w-32 px-4 py-2 border border-gray-300 rounded-md"
+                  placeholder="1.0"
+                />
+                <span className="text-sm text-gray-600">
+                  points per $1 spent
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Example: 1.5 means customers earn 1.5 points for every $1 spent
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -11,6 +11,7 @@ export async function GET(
       select: {
         id: true,
         companyName: true,
+        uniqueLinkId: true,
         bannerImageUrl: true,
       },
     })
