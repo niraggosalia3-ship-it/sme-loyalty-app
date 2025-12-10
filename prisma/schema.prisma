@@ -52,6 +52,7 @@ model Customer {
   sme                SME              @relation(fields: [smeId], references: [id], onDelete: Cascade)
   transactions       Transaction[]
   customerBenefits   CustomerBenefit[]
+  walletPass         WalletPass?
 }
 
 model Transaction {
@@ -74,5 +75,19 @@ model CustomerBenefit {
   usedAt      DateTime?
   status      String   @default("available") // "available" | "used" | "expired"
   customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model WalletPass {
+  id                String   @id @default(cuid())
+  customerId        String   @unique
+  passTypeId        String   // Apple Pass Type ID or Google Wallet Class ID
+  serialNumber      String   @unique // Unique serial for the pass
+  authenticationToken String @unique // Token for web service authentication
+  deviceToken       String?  // Push notification token (Apple)
+  fcmToken          String?  // Firebase Cloud Messaging token (Google)
+  platform          String   // "ios" | "android"
+  lastUpdated       DateTime @default(now())
+  createdAt         DateTime @default(now())
+  customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkAndUpgradeTier } from '@/lib/tier-upgrade'
+import { notifyWalletPassUpdate } from '@/lib/push-notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,6 +62,14 @@ export async function POST(request: NextRequest) {
         taxAmount: taxAmount || null,
       },
     })
+
+    // Send push notification to update wallet pass
+    try {
+      await notifyWalletPassUpdate(customerId)
+    } catch (error) {
+      console.error('Error sending wallet pass update notification:', error)
+      // Don't fail the transaction if push notification fails
+    }
 
     return NextResponse.json({
       transaction: {

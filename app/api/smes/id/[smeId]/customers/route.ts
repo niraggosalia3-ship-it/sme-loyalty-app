@@ -16,20 +16,21 @@ export async function GET(
     }
 
     // Get all customers for this SME (data isolation)
-    const customers = await prisma.customer.findMany({
-      where: { smeId: params.smeId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        birthDate: true,
-        gender: true,
-        points: true,
-        tier: true,
-        createdAt: true,
-      },
-    })
+          const customers = await prisma.customer.findMany({
+            where: { smeId: params.smeId },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              birthDate: true,
+              gender: true,
+              points: true,
+              tier: true,
+              qrCodeId: true,
+              createdAt: true,
+            },
+          })
 
     return NextResponse.json(customers)
   } catch (error) {

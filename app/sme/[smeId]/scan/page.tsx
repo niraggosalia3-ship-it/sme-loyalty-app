@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { Html5Qrcode } from 'html5-qrcode'
 import QRCode from 'react-qr-code'
 
@@ -40,6 +40,7 @@ interface TierUpgrade {
 
 export default function QRScanner() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const smeId = params.smeId as string
 
   const [scanning, setScanning] = useState(false)
@@ -329,10 +330,17 @@ export default function QRScanner() {
   }
 
   useEffect(() => {
+    // Check if QR code is provided in URL params
+    const qrCodeFromUrl = searchParams.get('qrCode')
+    if (qrCodeFromUrl && !customer) {
+      setQrCodeId(qrCodeFromUrl)
+      fetchCustomer(qrCodeFromUrl)
+    }
+
     return () => {
       stopScanning()
     }
-  }, [])
+  }, [searchParams])
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">

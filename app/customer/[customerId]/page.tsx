@@ -56,9 +56,14 @@ export default function CustomerDashboard() {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [addingToWallet, setAddingToWallet] = useState(false)
+  const [walletSupported, setWalletSupported] = useState(false)
 
   useEffect(() => {
     fetchCustomerData()
+    // Always show wallet button (works on all devices)
+    // Mobile devices can save to home screen, desktop can view/print
+    setWalletSupported(true)
   }, [customerId])
 
   const fetchCustomerData = async () => {
@@ -84,6 +89,46 @@ export default function CustomerDashboard() {
       console.error('Error fetching customer data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAddToWallet = async () => {
+    if (!customer) return
+
+    setAddingToWallet(true)
+    try {
+      // Detect platform
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      const platform = isIOS ? 'ios' : 'android'
+
+      // Generate pass
+      const res = await fetch('/api/passes/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: customer.id,
+          platform,
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+
+        // Redirect to pass page (works for both iOS and Android)
+        if (data.passUrl) {
+          window.open(data.passUrl, '_blank')
+        } else {
+          alert(data.message || 'Pass generated successfully!')
+        }
+      } else {
+        const error = await res.json()
+        alert(error.error || 'Failed to generate wallet pass')
+      }
+    } catch (error) {
+      console.error('Error adding to wallet:', error)
+      alert('Failed to add to wallet. Please try again.')
+    } finally {
+      setAddingToWallet(false)
     }
   }
 
@@ -201,6 +246,34 @@ export default function CustomerDashboard() {
               <span>ℹ️</span>
               <span>Program</span>
             </a>
+          </div>
+
+          {/* Add to Wallet Button */}
+          <div className="mt-6">
+            <button
+              onClick={handleAddToWallet}
+              disabled={addingToWallet}
+              className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors font-semibold text-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {addingToWallet ? (
+                <>
+                  <span className="animate-spin">⏳</span>
+                  <span>Generating Pass...</span>
+                </>
+              ) : (
+                <>
+                  <span>💳</span>
+                  <span>Add to Wallet</span>
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              {/iPad|iPhone|iPod/.test(navigator.userAgent) 
+                ? 'Save to home screen for quick access' 
+                : /Android/.test(navigator.userAgent)
+                ? 'Save to home screen or add to Google Wallet'
+                : 'View your wallet card (can be saved as image)'}
+            </p>
           </div>
 
           {/* QR Code Section - Small and Scannable */}

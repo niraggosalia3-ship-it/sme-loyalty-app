@@ -12,6 +12,7 @@ interface Customer {
   gender: string
   points: number
   tier: string
+  qrCodeId: string
   createdAt: string
 }
 
@@ -399,12 +400,21 @@ export default function SMEDashboard() {
                               </button>
                             </>
                           ) : (
-                            <button
-                              onClick={() => handleEdit(customer)}
-                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                            >
-                              Edit
-                            </button>
+                            <div className="flex gap-2">
+                              <Link
+                                href={`/sme/${smeId}/scan?qrCode=${customer.qrCodeId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 whitespace-nowrap"
+                              >
+                                View Customer
+                              </Link>
+                              <button
+                                onClick={() => handleEdit(customer)}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                              >
+                                Edit
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
