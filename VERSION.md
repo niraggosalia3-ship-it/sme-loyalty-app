@@ -1,6 +1,105 @@
 # Version History
 
-## Version 0.5 (Current) - December 10, 2025
+## Version 0.6 (Current) - December 10, 2025
+
+### Features Included:
+✅ **API Integration System**
+- API key management per SME account
+- Generate, show/hide, and regenerate API keys
+- Secure API key format: `SME-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX`
+- API key displayed in Customer Management Dashboard
+
+✅ **Single Customer Creation API**
+- `POST /api/integration/customers` endpoint
+- API key authentication via `X-API-Key` header
+- Support for optional fields: phone, externalId, ytdSpend
+- Automatic points and tier calculation from YTD spend
+- Initial transaction record creation for YTD spend
+- Duplicate email detection (returns existing customer info)
+- Comprehensive error handling
+
+✅ **Bulk Customer Import (JSON API)**
+- `POST /api/integration/customers/bulk` endpoint
+- Batch processing (up to 1,000 customers per request)
+- Per-row error handling (failures don't stop batch)
+- Detailed results with success/failure status
+- Summary statistics (total, successful, failed)
+
+✅ **CSV Bulk Import (Web UI)**
+- New import page: `/sme/[smeId]/import`
+- CSV file upload with validation
+- Flexible column name matching (handles various formats)
+- Auto-detection of headers (works with or without header row)
+- Progress indicator during import
+- Results table with success/failure details
+- Error report download (CSV format)
+- File size limit: 10MB, Row limit: 10,000
+- Improved file reading with modern File API + FileReader fallback
+
+✅ **YTD Spend Processing**
+- Calculates initial points: `points = ytdSpend × pointsMultiplier`
+- Determines initial tier based on accumulated points
+- Creates initial transaction record for transparency
+- Automatically upgrades tier if applicable
+- Supports optional `joinDate` for transaction dating
+
+✅ **Enhanced Customer Model**
+- Added `phone` field (optional)
+- Added `externalId` field (optional) - for mapping to external systems
+- Better integration with existing customer management
+
+✅ **Database Updates**
+- Added `apiKey` field to SME model (unique, optional)
+- Added `phone` field to Customer model (optional)
+- Added `externalId` field to Customer model (optional)
+
+✅ **New API Endpoints**
+- `POST /api/integration/customers` - Single customer creation
+- `POST /api/integration/customers/bulk` - Bulk customer import
+- `POST /api/smes/id/[smeId]/api-key` - Generate/regenerate API key
+- `GET /api/smes/id/[smeId]/api-key` - Get API key status
+- `POST /api/customers` - Export `generateQRCodeId` function
+
+✅ **New Pages**
+- `/sme/[smeId]/import` - CSV bulk import interface
+- Enhanced Customer Management Dashboard with API key section
+
+✅ **New Utilities**
+- `lib/api-key.ts` - API key generation and validation
+- Enhanced CSV parsing with header auto-detection
+- Improved file reading with multiple fallback methods
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with SQLite
+- Tailwind CSS
+- React QR Code library
+- FileReader API + Modern File API
+
+### Git Tag:
+```bash
+git checkout v0.6
+```
+
+### Commit Hash:
+Check with: `git log --oneline -1`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.6
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.6
+
+# Or create a new branch from this version
+git checkout -b restore-v0.6 v0.6
+```
+
+---
+
+## Version 0.5 - December 10, 2025
 
 ### Features Included:
 ✅ **Free Wallet Integration**

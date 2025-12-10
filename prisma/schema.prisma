@@ -14,6 +14,7 @@ model SME {
   id                String      @id @default(cuid())
   companyName       String
   uniqueLinkId      String      @unique
+  apiKey            String?     @unique // API key for integration
   bannerImageUrl    String?
   programName       String?     // e.g., "Gold Rewards Program"
   programDescription String?    // Main program description
@@ -44,6 +45,8 @@ model Customer {
   birthDate          DateTime
   email              String
   gender             String
+  phone              String?          // Optional phone number
+  externalId         String?          // External system ID for mapping
   points             Int              @default(0)
   tier               String           @default("Bronze")
   qrCodeId           String           @unique

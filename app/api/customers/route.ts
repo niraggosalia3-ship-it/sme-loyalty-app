@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { randomBytes } from 'crypto'
 
-function generateQRCodeId(): string {
+export function generateQRCodeId(): string {
   return 'CUST-' + randomBytes(8).toString('hex').toUpperCase()
 }
 
