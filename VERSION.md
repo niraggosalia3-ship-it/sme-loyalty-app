@@ -1,6 +1,61 @@
 # Version History
 
-## Version 0.2 (Current) - December 9, 2025
+## Version 0.3 (Current) - December 9, 2025
+
+### Features Included:
+✅ **Program Page with Expanded Benefits**
+- Always-expanded tier cards showing all benefits
+- No click-to-expand functionality
+- Better visibility for all rewards
+
+✅ **Program Editor**
+- Full program customization interface
+- Edit program name, description, earning rules
+- Brand color customization (primary & secondary)
+- Tier management (add, edit, remove tiers)
+- Set tier names, points required, benefits, colors
+
+✅ **Security Improvements**
+- Removed admin dashboard access from SME pages
+- SME owners can only access their own data
+- Better data isolation and privacy
+
+✅ **Enhanced Program Features**
+- Visual tier progression
+- Brand-colored UI elements
+- Program preview link
+- Join program flow to registration form
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with SQLite
+- Tailwind CSS
+- React QR Code library
+
+### Git Tag:
+```bash
+git checkout v0.3
+```
+
+### Commit Hash:
+Check with: `git log --oneline -1`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.3
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.3
+
+# Or create a new branch from this version
+git checkout -b restore-v0.3 v0.3
+```
+
+---
+
+## Version 0.2 - December 9, 2025
 
 ### Features Included:
 ✅ **SME Customer Management Dashboard**
