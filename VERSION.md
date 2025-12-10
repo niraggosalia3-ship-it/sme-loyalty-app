@@ -83,7 +83,7 @@ git checkout v0.6
 ```
 
 ### Commit Hash:
-Check with: `git log --oneline -1`
+`cd42edf`
 
 ### How to Revert to This Version:
 ```bash
