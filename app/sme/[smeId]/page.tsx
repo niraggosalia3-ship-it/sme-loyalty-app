@@ -180,12 +180,6 @@ export default function SMEDashboard() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <Link
-              href="/"
-              className="text-blue-600 hover:text-blue-700 text-sm mb-2 inline-block"
-            >
-              ← Back to Admin Dashboard
-            </Link>
             <h1 className="text-3xl font-bold text-gray-900">
               {sme.companyName} - Customer Management
             </h1>
@@ -193,6 +187,12 @@ export default function SMEDashboard() {
               Manage your customers and view transaction history
             </p>
           </div>
+          <Link
+            href={`/sme/${smeId}/program`}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm whitespace-nowrap"
+          >
+            Edit Program
+          </Link>
         </div>
 
         {/* Banner */}

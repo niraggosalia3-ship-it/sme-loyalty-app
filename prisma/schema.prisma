@@ -11,12 +11,29 @@ datasource db {
 }
 
 model SME {
-  id             String      @id @default(cuid())
-  companyName    String
-  uniqueLinkId   String      @unique
-  bannerImageUrl String?
-  createdAt      DateTime    @default(now())
-  customers      Customer[]
+  id                String      @id @default(cuid())
+  companyName       String
+  uniqueLinkId      String      @unique
+  bannerImageUrl    String?
+  programName       String?     // e.g., "Gold Rewards Program"
+  programDescription String?    // Main program description
+  pointsEarningRules String?    // How customers earn points
+  primaryColor      String?     // Brand primary color (hex)
+  secondaryColor    String?     // Brand secondary color (hex)
+  createdAt         DateTime    @default(now())
+  customers         Customer[]
+  tiers             Tier[]
+}
+
+model Tier {
+  id          String   @id @default(cuid())
+  smeId       String
+  name        String   // e.g., "Bronze", "Silver", "Gold"
+  pointsRequired Int   // Points needed to reach this tier
+  benefits    String   // JSON array of benefits or comma-separated
+  color       String?  // Tier color (hex)
+  order       Int      // Display order (0, 1, 2, ...)
+  sme         SME      @relation(fields: [smeId], references: [id], onDelete: Cascade)
 }
 
 model Customer {

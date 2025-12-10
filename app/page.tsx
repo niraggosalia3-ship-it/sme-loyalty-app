@@ -260,6 +260,13 @@ export default function AdminDashboard() {
                               Customer Registration Link
                             </button>
                             <Link
+                              href={`/program/${sme.uniqueLinkId}`}
+                              target="_blank"
+                              className="px-3 py-1 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 whitespace-nowrap inline-block text-center"
+                            >
+                              View Program Page
+                            </Link>
+                            <Link
                               href={`/sme/${sme.id}`}
                               className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 whitespace-nowrap inline-block text-center"
                             >
