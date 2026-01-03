@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model SME {
@@ -93,4 +93,3 @@ model WalletPass {
   createdAt         DateTime @default(now())
   customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
-

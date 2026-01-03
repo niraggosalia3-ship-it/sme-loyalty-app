@@ -48,7 +48,8 @@ export async function GET(
     }
 
     const customer = walletPass.customer
-    const webServiceUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/passes/${params.customerId}/update`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    const webServiceUrl = `${baseUrl}/api/passes/${params.customerId}/update`
 
     // Return updated pass data (web-based pass)
     // This works for both iOS and Android without requiring certificates

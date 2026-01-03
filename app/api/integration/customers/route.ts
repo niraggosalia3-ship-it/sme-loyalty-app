@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkAndUpgradeTier } from '@/lib/tier-upgrade'
-import { generateQRCodeId } from '@/app/api/customers/route'
+import { randomBytes } from 'crypto'
+
+function generateQRCodeId(): string {
+  return 'CUST-' + randomBytes(8).toString('hex').toUpperCase()
+}
 
 interface CustomerData {
   name: string
@@ -138,13 +142,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    
     return NextResponse.json({
       success: true,
       customerId: customer.id,
       qrCodeId: customer.qrCodeId,
       points: customer.points,
       tier: customer.tier,
-      dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/customer/${customer.id}`,
+      dashboardUrl: `${baseUrl}/customer/${customer.id}`,
     })
   } catch (error: any) {
     console.error('Error creating customer via API:', error)

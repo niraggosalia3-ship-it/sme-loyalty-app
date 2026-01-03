@@ -56,7 +56,7 @@ export async function GET(
       linksModuleData: {
         uris: [
           {
-            uri: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/customer/${customer.id}`,
+            uri: `${process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')}/customer/${customer.id}`,
             description: 'View Full Dashboard',
           },
         ],

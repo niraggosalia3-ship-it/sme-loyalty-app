@@ -43,12 +43,13 @@ export async function POST(request: NextRequest) {
 
     const serialNumber = generateSerialNumber(customerId)
     const authenticationToken = generateAuthToken()
-    const webServiceUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/passes/${customerId}/update`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    const webServiceUrl = `${baseUrl}/api/passes/${customerId}/update`
 
         if (platform === 'ios') {
           // For iOS: Create a web-based pass page (free alternative)
           // This works without Apple Developer account
-          const passUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/passes/${customerId}`
+          const passUrl = `${baseUrl}/passes/${customerId}`
           
           // Create or update wallet pass record
           await prisma.walletPass.upsert({
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
         } else if (platform === 'android') {
           // For Android: Create a web-based pass page (free alternative)
           // This works without Google Cloud setup
-          const passUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/passes/${customerId}`
+          const passUrl = `${baseUrl}/passes/${customerId}`
           
           // Create or update wallet pass record
           await prisma.walletPass.upsert({

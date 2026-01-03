@@ -232,10 +232,22 @@ export default function SMEDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Banner at the top */}
+      {sme.bannerImageUrl && (
+        <div className="w-full h-64 bg-gray-200 overflow-hidden">
+          <img
+            src={sme.bannerImageUrl}
+            alt={`${sme.companyName} banner`}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      
+      <div className="py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -273,7 +285,7 @@ export default function SMEDashboard() {
             </Link>
           </div>
           </div>
-        </div>
+          </div>
 
         {/* API Key Section */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
@@ -333,19 +345,6 @@ export default function SMEDashboard() {
             </p>
           )}
         </div>
-
-        {/* Banner */}
-        {sme.bannerImageUrl && (
-          <div className="mb-6 bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="w-full h-48 bg-gray-200 overflow-hidden">
-              <img
-                src={sme.bannerImageUrl}
-                alt={`${sme.companyName} banner`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Customers List */}
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -616,6 +615,7 @@ export default function SMEDashboard() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

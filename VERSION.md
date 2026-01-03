@@ -1,6 +1,109 @@
 # Version History
 
-## Version 0.6 (Current) - December 10, 2025
+## Version 0.7 (Current) - December 10, 2025
+
+### Features Included:
+✅ **AI-Native Program Creation (Conversational Setup)**
+- New AI-powered program creation flow: `/create-ai`
+- Hybrid UI combining conversational chat with interactive cards
+- Lower barrier to entry for SME onboarding
+- Step-by-step guided setup process
+
+✅ **AI-Powered Suggestions**
+- **Program Name Generation**: AI suggests multiple program names with explanations
+- **Tier Structure Suggestions**: AI recommends tier thresholds based on business context
+- **Tier Name Suggestions**: Context-aware tier naming (not just Bronze/Silver/Gold)
+- **Benefit Recommendations**: AI suggests benefits per tier based on business type and tier level
+- **Banner Image Generation**: Gradient-based banner style previews (Professional & Modern, Vibrant & Energetic, Minimalist & Clean)
+
+✅ **Interactive Program Builder**
+- Clickable and editable suggestions (no need to type everything)
+- Inline editing of tier names and point thresholds
+- Benefit selection/deselection per tier
+- Live preview sidebar showing program configuration
+- Automatic step progression with user control
+
+✅ **Gradient Banner System**
+- Three pre-designed banner styles with gradient previews
+- Automatic banner image generation from selected gradient style
+- Canvas-based image generation with program name
+- Data URL storage for banner images
+- Custom image upload option still available
+
+✅ **Enhanced Banner Display**
+- Banner consistently displayed at top of all pages
+- Banner on SME customer management page (moved to top)
+- Banner on program pages
+- Banner on customer forms
+- Consistent styling across all pages
+
+✅ **Improved User Experience**
+- Fixed tier editing (points threshold editing works correctly)
+- Fixed benefit selection flow (no premature step advancement)
+- Fixed image selector display (gradient previews visible)
+- Better error handling and loading states
+- Smooth step transitions
+
+✅ **New Pages**
+- `/create-ai` - AI-powered program creation interface
+- Enhanced admin dashboard with "Create Program with AI" button
+
+✅ **New Components**
+- `ChatInterface` - Conversational UI with context gathering
+- `ProgramNameSelector` - Interactive program name selection
+- `TierBuilder` - Editable tier structure builder
+- `BenefitSelector` - Per-tier benefit selection
+- `ImageSelector` - Banner style/image selection
+- `LivePreview` - Real-time program preview sidebar
+
+✅ **New Hooks**
+- `useProgramBuilder` - Centralized state management for AI program creation
+- Handles context gathering, AI suggestions, and final program save
+
+✅ **New API Endpoints**
+- `POST /api/ai/program/name` - Generate program name suggestions
+- `POST /api/ai/program/tiers` - Generate tier structure suggestions
+- `POST /api/ai/program/benefits` - Generate benefit suggestions per tier
+- `POST /api/ai/program/image` - Generate banner image style options
+
+✅ **Technical Improvements**
+- Canvas-based gradient banner generation
+- Improved state management for complex multi-step flows
+- Better error handling and user feedback
+- Fixed JSX structure issues in SME customer management page
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with SQLite
+- Tailwind CSS
+- React QR Code library
+- HTML5 Canvas API (for banner generation)
+- React Hooks for state management
+
+### Git Tag:
+```bash
+git checkout v0.7
+```
+
+### Commit Hash:
+Check with: `git log --oneline -1`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.7
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.7
+
+# Or create a new branch from this version
+git checkout -b restore-v0.7 v0.7
+```
+
+---
+
+## Version 0.6 - December 10, 2025
 
 ### Features Included:
 ✅ **API Integration System**

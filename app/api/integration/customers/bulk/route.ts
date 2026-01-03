@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkAndUpgradeTier } from '@/lib/tier-upgrade'
-import { generateQRCodeId } from '@/app/api/customers/route'
+import { randomBytes } from 'crypto'
+
+function generateQRCodeId(): string {
+  return 'CUST-' + randomBytes(8).toString('hex').toUpperCase()
+}
 
 interface BulkCustomerData {
   name: string

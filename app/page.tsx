@@ -130,7 +130,16 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <a
+            href="/create-ai"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-semibold text-sm flex items-center gap-2"
+          >
+            <span>✨</span>
+            <span>Create Program with AI</span>
+          </a>
+        </div>
 
         {/* Create SME Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
