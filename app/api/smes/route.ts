@@ -86,6 +86,13 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error creating SME:', error)
+    console.error('Error details:', {
+      name: error?.name,
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    })
     
     // Return detailed error information
     const errorResponse: any = {
@@ -96,9 +103,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Add specific information for Prisma errors
-    if (error?.name === 'PrismaClientInitializationError') {
+    if (error?.name === 'PrismaClientInitializationError' || error?.code?.startsWith('P10')) {
       errorResponse.isConnectionError = true
-      errorResponse.fix = 'Check DATABASE_URL format in Vercel environment variables. Make sure password is URL-encoded.'
+      errorResponse.fix = 'Check DATABASE_URL format in Vercel environment variables. Make sure password is URL-encoded. Use Supabase Connection Pooler (port 6543).'
+      
+      // Check if DATABASE_URL is set
+      if (!process.env.DATABASE_URL) {
+        errorResponse.details = 'DATABASE_URL environment variable is not set'
+        errorResponse.fix = 'Set DATABASE_URL in Vercel environment variables'
+      }
     }
 
     // Add error code details
@@ -108,7 +121,17 @@ export async function POST(request: NextRequest) {
         errorResponse.fix = 'Cannot reach database server. Check if Supabase project is active and DATABASE_URL is correct.'
       } else if (error.code === 'P1013') {
         errorResponse.fix = 'Invalid database URL format. Check password encoding and connection string format.'
+      } else if (error.code === 'P2002') {
+        errorResponse.fix = 'Unique constraint violation. Company name or link ID already exists.'
+      } else if (error.code === 'P2025') {
+        errorResponse.fix = 'Record not found. Database schema may be out of sync.'
       }
+    }
+
+    // If it's a network/connection error but not a Prisma error
+    if (error?.message && (error.message.includes('ECONNREFUSED') || error.message.includes('timeout'))) {
+      errorResponse.isConnectionError = true
+      errorResponse.fix = 'Cannot connect to database. Check if Supabase project is active and DATABASE_URL is correct.'
     }
 
     return NextResponse.json(errorResponse, { status: 500 })
