@@ -28,10 +28,17 @@ export default function AdminDashboard() {
   const fetchSMEs = async () => {
     try {
       const res = await fetch('/api/smes')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Error fetching SMEs:', errorData)
+        alert(`Failed to load data: ${errorData.error || 'Unknown error'}`)
+        return
+      }
       const data = await res.json()
       setSmes(data)
     } catch (error) {
       console.error('Error fetching SMEs:', error)
+      alert(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

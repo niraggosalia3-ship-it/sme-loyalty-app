@@ -10,13 +10,30 @@ function generateUniqueId(length: number = 10): string {
 
 export async function GET() {
   try {
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL is not set')
+      return NextResponse.json({ 
+        error: 'Database configuration error',
+        details: 'DATABASE_URL environment variable is not set'
+      }, { status: 500 })
+    }
+
     const smes = await prisma.sME.findMany({
       orderBy: { createdAt: 'desc' },
     })
     return NextResponse.json(smes)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching SMEs:', error)
-    return NextResponse.json({ error: 'Failed to fetch SMEs' }, { status: 500 })
+    // Return more detailed error for debugging
+    return NextResponse.json({ 
+      error: 'Failed to fetch SMEs',
+      details: error?.message || 'Unknown error',
+      type: error?.name || 'Error',
+      code: error?.code || 'UNKNOWN',
+      // Don't expose full connection string, but show if it's a connection issue
+      isConnectionError: error?.name === 'PrismaClientInitializationError'
+    }, { status: 500 })
   }
 }
 
