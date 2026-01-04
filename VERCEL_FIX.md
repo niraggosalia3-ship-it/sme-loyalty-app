@@ -16,13 +16,23 @@ Since Vercel renamed your project to `sme-loyalty-app1`, you need to update the 
 6. Make sure it's enabled for Production, Preview, and Development
 7. Click "Save"
 
-### Step 2: Check GitHub Integration
-1. In Vercel dashboard → Your project → **Settings**
-2. Go to **Git** section
-3. Verify:
-   - Repository is connected: `niraggosalia3-ship-it/sme-loyalty-app`
-   - Production Branch: `main`
-   - Auto-deploy is enabled
+### Step 2: Fix GitHub Integration (IMPORTANT!)
+**Issue:** Vercel might be connected to wrong repository (`sme-loyalty-app1` instead of `sme-loyalty-app`)
+
+**Fix:**
+1. In Vercel dashboard → Your project → **Settings → Git**
+2. **Disconnect** the current repository (if it shows `sme-loyalty-app1`)
+3. Click **"Connect Git Repository"**
+4. Select **GitHub** and find: `sme-loyalty-app` (without the "1")
+5. Click **"Import"** or **"Connect"**
+6. Select **Production Branch:** `main`
+7. Enable **Auto-deploy**
+8. Save
+
+**Verify:**
+- Repository: `niraggosalia3-ship-it/sme-loyalty-app` ✅
+- Production Branch: `main` ✅
+- Auto-deploy: Enabled ✅
 
 ### Step 3: Trigger Manual Deployment
 If auto-deploy isn't working:

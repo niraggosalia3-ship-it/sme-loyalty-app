@@ -22,7 +22,13 @@ export default function AdminDashboard() {
   const [newLink, setNewLink] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchSMEs()
+    // Wrap in try-catch to prevent crashes
+    try {
+      fetchSMEs()
+    } catch (error) {
+      console.error('Error in useEffect:', error)
+      setSmes([])
+    }
   }, [])
 
   const fetchSMEs = async () => {
