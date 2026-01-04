@@ -10,6 +10,7 @@
     "lint": "next lint",
     "clean": "rm -rf .next",
     "fix": "rm -rf .next && npm run dev",
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
