@@ -28,17 +28,23 @@ export default function AdminDashboard() {
   const fetchSMEs = async () => {
     try {
       const res = await fetch('/api/smes')
+      const data = await res.json()
+      
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Error fetching SMEs:', errorData)
-        alert(`Failed to load data: ${errorData.error || 'Unknown error'}`)
+        // Show detailed error
+        const errorMsg = data.details || data.error || 'Unknown error'
+        console.error('Error fetching SMEs:', data)
+        setSmes([]) // Set empty array to prevent crash
+        // Show error in UI instead of alert
+        alert(`Database Error: ${errorMsg}\n\nType: ${data.type || 'Unknown'}\n\nPlease check Vercel logs for details.`)
         return
       }
-      const data = await res.json()
+      
       setSmes(data)
     } catch (error) {
       console.error('Error fetching SMEs:', error)
-      alert(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setSmes([]) // Set empty array to prevent crash
+      alert(`Network Error: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease check your internet connection and try again.`)
     }
   }
 
