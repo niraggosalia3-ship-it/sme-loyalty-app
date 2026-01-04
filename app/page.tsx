@@ -34,17 +34,24 @@ export default function AdminDashboard() {
         // Show detailed error
         const errorMsg = data.details || data.error || 'Unknown error'
         console.error('Error fetching SMEs:', data)
-        setSmes([]) // Set empty array to prevent crash
-        // Show error in UI instead of alert
-        alert(`Database Error: ${errorMsg}\n\nType: ${data.type || 'Unknown'}\n\nPlease check Vercel logs for details.`)
+        // Set empty array to prevent crash - don't show alert that blocks
+        setSmes([])
+        // Log error but don't crash the app
         return
       }
       
-      setSmes(data)
+      // Only set data if response is OK and data is an array
+      if (Array.isArray(data)) {
+        setSmes(data)
+      } else {
+        console.error('Invalid data format:', data)
+        setSmes([])
+      }
     } catch (error) {
       console.error('Error fetching SMEs:', error)
-      setSmes([]) // Set empty array to prevent crash
-      alert(`Network Error: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease check your internet connection and try again.`)
+      // Set empty array to prevent crash
+      setSmes([])
+      // Don't show alert - just log the error
     }
   }
 
