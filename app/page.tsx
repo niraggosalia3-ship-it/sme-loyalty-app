@@ -159,13 +159,24 @@ export default function AdminDashboard() {
         setBannerPreview(null)
         fetchSMEs()
       } else {
-        // Handle API errors
+        // Handle API errors - get detailed error message
+        let errorMessage = 'Failed to create SME'
         try {
           const errorData = await res.json()
-          alert(errorData.error || errorData.details || 'Failed to create SME. Please try again.')
+          console.error('API Error Response:', errorData)
+          // Build detailed error message
+          errorMessage = errorData.error || errorData.details || errorMessage
+          if (errorData.fix) {
+            errorMessage += `\n\nFix: ${errorData.fix}`
+          }
+          if (errorData.code) {
+            errorMessage += `\n\nError Code: ${errorData.code}`
+          }
         } catch (jsonError) {
-          alert(`Failed to create SME (Status: ${res.status}). Please try again.`)
+          console.error('Error parsing error response:', jsonError)
+          errorMessage = `Failed to create SME (HTTP ${res.status}). Please check the console for details.`
         }
+        alert(errorMessage)
       }
     } catch (error: any) {
       console.error('Error creating SME:', error)
