@@ -1,7 +1,7 @@
 # Vercel Deployment - Step by Step
 
 ## ✅ Code is on GitHub!
-Repository: https://github.com/niraggosalia3-ship-it/sme-loyalty-app
+Repository: https://github.com/niraggosalia3-ship-it/sme-loyalty-app1
 
 ## 🚀 Deploy to Vercel
 
@@ -9,11 +9,11 @@ Repository: https://github.com/niraggosalia3-ship-it/sme-loyalty-app
 1. Go to https://vercel.com
 2. Sign in with GitHub (use the same GitHub account)
 3. Click **"New Project"**
-4. You should see your repository `sme-loyalty-app`
+4. You should see your repository `sme-loyalty-app1`
 5. Click **"Import"** next to it
 
 ### Step 2: Configure Project
-1. **Project Name**: Keep default or change to `sme-loyalty-app`
+1. **Project Name**: Keep default or change to `sme-loyalty-app1`
 2. **Framework Preset**: Should auto-detect "Next.js" ✓
 3. **Root Directory**: Leave as `./` (default)
 4. **Build Command**: Should be `prisma generate && next build` (already in package.json)
@@ -24,7 +24,7 @@ Repository: https://github.com/niraggosalia3-ship-it/sme-loyalty-app
 - Vercel will build and deploy your app
 - This will take 2-3 minutes
 - The build will fail (expected - we need to add environment variables)
-- Note your deployment URL (e.g., `https://sme-loyalty-app.vercel.app`)
+- Note your deployment URL (e.g., `https://sme-loyalty-app1.vercel.app`)
 
 ### Step 4: Set up Vercel Blob Storage
 1. In Vercel dashboard, go to your project
@@ -45,7 +45,7 @@ Go to **Settings → Environment Variables** and add:
 
 **2. NEXT_PUBLIC_APP_URL**
 - Key: `NEXT_PUBLIC_APP_URL`
-- Value: `https://sme-loyalty-app.vercel.app` (replace with your actual Vercel URL)
+- Value: `https://sme-loyalty-app1.vercel.app` (replace with your actual Vercel URL)
 - Environment: Production, Preview, Development (select all)
 
 **3. BLOB_READ_WRITE_TOKEN**
