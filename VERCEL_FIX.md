@@ -20,7 +20,7 @@ Since Vercel renamed your project to `sme-loyalty-app1`, you need to update the 
 1. In Vercel dashboard → Your project → **Settings**
 2. Go to **Git** section
 3. Verify:
-   - Repository is connected: `niraggosalia3-ship-it/sme-loyalty-app1`
+   - Repository is connected: `niraggosalia3-ship-it/sme-loyalty-app`
    - Production Branch: `main`
    - Auto-deploy is enabled
 

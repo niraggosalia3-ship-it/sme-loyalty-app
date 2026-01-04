@@ -1,7 +1,7 @@
 # Vercel Deployment - Step by Step
 
 ## ✅ Code is on GitHub!
-Repository: https://github.com/niraggosalia3-ship-it/sme-loyalty-app1
+Repository: https://github.com/niraggosalia3-ship-it/sme-loyalty-app
 
 ## 🚀 Deploy to Vercel
 
@@ -9,7 +9,7 @@ Repository: https://github.com/niraggosalia3-ship-it/sme-loyalty-app1
 1. Go to https://vercel.com
 2. Sign in with GitHub (use the same GitHub account)
 3. Click **"New Project"**
-4. You should see your repository `sme-loyalty-app1`
+4. You should see your repository `sme-loyalty-app`
 5. Click **"Import"** next to it
 
 ### Step 2: Configure Project
