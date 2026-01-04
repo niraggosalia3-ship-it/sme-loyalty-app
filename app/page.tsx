@@ -28,30 +28,43 @@ export default function AdminDashboard() {
   const fetchSMEs = async () => {
     try {
       const res = await fetch('/api/smes')
-      const data = await res.json()
       
+      // Handle non-OK responses first
       if (!res.ok) {
-        // Show detailed error
-        const errorMsg = data.details || data.error || 'Unknown error'
-        console.error('Error fetching SMEs:', data)
-        // Set empty array to prevent crash - don't show alert that blocks
+        try {
+          const errorData = await res.json()
+          console.error('API Error:', errorData)
+        } catch (jsonError) {
+          // If JSON parsing fails, just log the status
+          console.error('API returned non-JSON error:', res.status, res.statusText)
+        }
+        // Set empty array to prevent crash - app will still work
         setSmes([])
-        // Log error but don't crash the app
         return
       }
       
-      // Only set data if response is OK and data is an array
+      // Parse JSON response safely
+      let data
+      try {
+        data = await res.json()
+      } catch (jsonError) {
+        console.error('Error parsing JSON:', jsonError)
+        setSmes([])
+        return
+      }
+      
+      // Only set data if it's an array
       if (Array.isArray(data)) {
         setSmes(data)
       } else {
-        console.error('Invalid data format:', data)
+        console.error('Invalid data format - expected array, got:', typeof data)
         setSmes([])
       }
     } catch (error) {
+      // Catch all errors (network, parsing, etc.)
       console.error('Error fetching SMEs:', error)
-      // Set empty array to prevent crash
+      // Set empty array to prevent crash - app will still work
       setSmes([])
-      // Don't show alert - just log the error
     }
   }
 
