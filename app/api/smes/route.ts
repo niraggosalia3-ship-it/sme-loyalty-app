@@ -84,9 +84,34 @@ export async function POST(request: NextRequest) {
       bannerImageUrl: sme.bannerImageUrl,
       createdAt: sme.createdAt,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating SME:', error)
-    return NextResponse.json({ error: 'Failed to create SME' }, { status: 500 })
+    
+    // Return detailed error information
+    const errorResponse: any = {
+      error: 'Failed to create SME',
+      details: error?.message || 'Unknown error',
+      type: error?.name || 'Error',
+      code: error?.code || 'UNKNOWN',
+    }
+
+    // Add specific information for Prisma errors
+    if (error?.name === 'PrismaClientInitializationError') {
+      errorResponse.isConnectionError = true
+      errorResponse.fix = 'Check DATABASE_URL format in Vercel environment variables. Make sure password is URL-encoded.'
+    }
+
+    // Add error code details
+    if (error?.code) {
+      errorResponse.errorCode = error.code
+      if (error.code === 'P1001') {
+        errorResponse.fix = 'Cannot reach database server. Check if Supabase project is active and DATABASE_URL is correct.'
+      } else if (error.code === 'P1013') {
+        errorResponse.fix = 'Invalid database URL format. Check password encoding and connection string format.'
+      }
+    }
+
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }
 

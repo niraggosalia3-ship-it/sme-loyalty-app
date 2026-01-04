@@ -158,9 +158,18 @@ export default function AdminDashboard() {
         setBannerImage(null)
         setBannerPreview(null)
         fetchSMEs()
+      } else {
+        // Handle API errors
+        try {
+          const errorData = await res.json()
+          alert(errorData.error || errorData.details || 'Failed to create SME. Please try again.')
+        } catch (jsonError) {
+          alert(`Failed to create SME (Status: ${res.status}). Please try again.`)
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating SME:', error)
+      alert(`Error creating SME: ${error?.message || 'Network error. Please check your connection and try again.'}`)
     } finally {
       setLoading(false)
     }
