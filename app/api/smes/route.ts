@@ -105,12 +105,13 @@ export async function POST(request: NextRequest) {
     // Add specific information for Prisma errors
     if (error?.name === 'PrismaClientInitializationError' || error?.code?.startsWith('P10')) {
       errorResponse.isConnectionError = true
-      errorResponse.fix = 'Check DATABASE_URL format in Vercel environment variables. Make sure password is URL-encoded. Use Supabase Connection Pooler (port 6543).'
       
       // Check if DATABASE_URL is set
       if (!process.env.DATABASE_URL) {
         errorResponse.details = 'DATABASE_URL environment variable is not set'
         errorResponse.fix = 'Set DATABASE_URL in Vercel environment variables'
+      } else {
+        errorResponse.fix = 'Check DATABASE_URL format in Vercel environment variables. Make sure password is URL-encoded. Use Supabase Connection Pooler (port 6543).'
       }
     }
 
