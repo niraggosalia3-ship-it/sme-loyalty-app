@@ -167,6 +167,8 @@ export default function CustomerDashboard() {
         if (outcome === 'accepted') {
           setIsInstalled(true)
           setInstallEvent(null) // Clear the event
+          // Store customerId in localStorage so PWA opens to their dashboard
+          localStorage.setItem('pwa_customerId', customerId)
           // Show success message
           alert('Wallet added successfully! You can now access it from your home screen.')
         } else {

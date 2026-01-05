@@ -2,7 +2,7 @@
   "name": "Loyalty Wallet",
   "short_name": "Loyalty",
   "description": "Your loyalty program wallet - access your points, tier, and QR code anytime",
-  "start_url": "/",
+  "start_url": "/wallet",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#667eea",
