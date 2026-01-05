@@ -181,7 +181,7 @@ export default function CustomerDashboard() {
           // Store customerId in localStorage so PWA opens to their dashboard
           localStorage.setItem('pwa_customerId', customerId)
           // Show success message
-          alert('Wallet added successfully! You can now access it from your home screen.')
+          alert('Saved to phone successfully! You can now access it from your home screen.')
         } else {
           // User dismissed the prompt
           console.log('User dismissed install prompt')
@@ -361,11 +361,11 @@ export default function CustomerDashboard() {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  Add to Home Screen
+                  Save to Phone
                 </h3>
                 <div className="space-y-4 text-gray-700">
                   <p className="text-sm">
-                    To add this wallet to your iPhone home screen:
+                    To save this wallet to your iPhone:
                   </p>
                   <ol className="list-decimal list-inside space-y-3 text-sm">
                     <li>Tap the <strong>Share</strong> button <span className="text-blue-600">(square with arrow ↑)</span> at the bottom of your screen</li>
@@ -379,10 +379,10 @@ export default function CustomerDashboard() {
                   </div>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
                     <p className="text-xs text-blue-900">
-                      💡 Once added, you can access your wallet offline and it will work like an app!
+                      💡 Once saved, you can access your wallet offline and it will work like an app!
                     </p>
                     <p className="text-xs text-blue-800 mt-2">
-                      📱 After adding, open the app from your home screen to access your personalized dashboard.
+                      📱 After saving, open the app from your home screen to access your personalized dashboard.
                     </p>
                   </div>
                 </div>
