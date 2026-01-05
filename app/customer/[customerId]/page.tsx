@@ -76,22 +76,16 @@ export default function CustomerDashboard() {
       return
     }
 
+    // Always enable wallet button (we'll handle different cases in the handler)
+    setWalletSupported(true)
+
     // Capture beforeinstallprompt event (Android Chrome, Edge, etc.)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       setInstallEvent(e as BeforeInstallPromptEvent)
-      setWalletSupported(true)
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-    // Check if iOS Safari
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
-    
-    if (isIOS && isSafari) {
-      setWalletSupported(true) // Show button, but will show instructions
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -141,7 +135,7 @@ export default function CustomerDashboard() {
       return
     }
 
-    // Android/Desktop: Use PWA install prompt
+    // Android/Desktop: Use PWA install prompt if available
     if (installEvent) {
       setAddingToWallet(true)
       try {
@@ -164,8 +158,13 @@ export default function CustomerDashboard() {
         setAddingToWallet(false)
       }
     } else {
-      // Fallback: Show instructions if prompt not available
-      alert('Install prompt not available. Please use your browser\'s menu to add to home screen.')
+      // Fallback: Show instructions for manual install
+      const isAndroid = /Android/.test(navigator.userAgent)
+      if (isAndroid) {
+        alert('To add to home screen:\n1. Tap the menu (three dots)\n2. Select "Add to Home screen" or "Install app"\n3. Tap "Add" or "Install"')
+      } else {
+        alert('To add to home screen:\n1. Look for the install icon in your browser\'s address bar\n2. Or use your browser\'s menu to add to home screen')
+      }
     }
   }
 
@@ -259,7 +258,7 @@ export default function CustomerDashboard() {
               <>
                 <button
                   onClick={handleAddToWallet}
-                  disabled={addingToWallet || (!installEvent && !(/iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)))}
+                  disabled={addingToWallet}
                   className="w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors font-semibold text-base md:text-lg flex items-center justify-center gap-2 md:gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
                   {addingToWallet ? (
@@ -277,7 +276,9 @@ export default function CustomerDashboard() {
                 <p className="text-xs text-gray-500 text-center mt-2">
                   {/iPad|iPhone|iPod/.test(navigator.userAgent) 
                     ? 'Tap to see installation instructions' 
-                    : 'Install to access your wallet offline'}
+                    : installEvent 
+                    ? 'Install to access your wallet offline'
+                    : 'Tap to see installation options'}
                 </p>
               </>
             )}
