@@ -70,6 +70,34 @@ export default function QRScanner() {
 
   const startScanning = async () => {
     try {
+      // Check if we're on HTTPS (required for camera access on most browsers)
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost'
+      
+      if (!isSecure) {
+        alert('Camera access requires HTTPS. Please use the manual entry option or access the site via HTTPS.')
+        setManualEntry(true)
+        return
+      }
+
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Your browser does not support camera access. Please use manual entry.')
+        setManualEntry(true)
+        return
+      }
+
+      // Set scanning to true first so the div renders
+      setScanning(true)
+
+      // Wait a tick for React to render the div
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Check if element exists
+      const element = document.getElementById('qr-reader')
+      if (!element) {
+        throw new Error('Scanner container element not found')
+      }
+
       const html5QrCode = new Html5Qrcode('qr-reader')
       scannerRef.current = html5QrCode
 
@@ -83,14 +111,31 @@ export default function QRScanner() {
           handleQRCodeScanned(decodedText)
         },
         (errorMessage) => {
-          // Ignore scanning errors
+          // Ignore scanning errors (just not finding QR codes yet)
         }
       )
-
-      setScanning(true)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error starting scanner:', err)
-      alert('Could not start camera. Please use manual entry.')
+      
+      // Reset scanning state on error
+      setScanning(false)
+      
+      // Provide more helpful error messages
+      let errorMessage = 'Could not start camera. Please use manual entry.'
+      
+      if (err?.message) {
+        if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
+          errorMessage = 'Camera permission denied. Please allow camera access in your browser settings and try again, or use manual entry.'
+        } else if (err.message.includes('NotFoundError') || err.message.includes('no camera')) {
+          errorMessage = 'No camera found on this device. Please use manual entry.'
+        } else if (err.message.includes('NotReadableError') || err.message.includes('DeviceInUse')) {
+          errorMessage = 'Camera is already in use by another app. Please close other apps using the camera and try again, or use manual entry.'
+        } else if (err.message.includes('Scanner container')) {
+          errorMessage = 'Could not initialize scanner. Please refresh the page and try again, or use manual entry.'
+        }
+      }
+      
+      alert(errorMessage)
       setManualEntry(true)
     }
   }
