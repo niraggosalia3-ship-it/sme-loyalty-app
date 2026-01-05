@@ -1,6 +1,90 @@
 # Version History
 
-## Version 0.7 (Current) - December 10, 2025
+## Version 0.8 (Current) - January 5, 2025
+
+### Features Included:
+✅ **Progressive Web App (PWA) Implementation**
+- Full PWA support with manifest.json and service worker
+- "Save to Phone" functionality (renamed from "Add to Wallet")
+- Native install prompt on Android Chrome
+- iOS manual installation instructions (all browsers)
+- PWA opens directly to customer's personalized dashboard
+- Automatic customerId storage on install
+- `/wallet` redirect page for PWA launches
+
+✅ **Production Deployment**
+- Deployed to Vercel (https://sme-loyalty-app1.vercel.app)
+- PostgreSQL database on Supabase (replaced SQLite)
+- Vercel Blob Storage for file uploads
+- Environment variables configured for production
+- Connection pooler support for database
+- Production-ready error handling
+
+✅ **Mobile Optimization**
+- Fixed bottom navigation bar for mobile
+- Card-based layout for transaction tables on mobile
+- Responsive design for all high-priority pages:
+  - Customer Dashboard
+  - Customer Form
+  - SME Scan Page
+  - Program Page
+- Mobile-first button placement and sizing
+- Improved QR scanner with better error handling
+- Full-width inputs and responsive banners
+
+✅ **PWA Icons & Assets**
+- Proper 192x192 and 512x512 PNG icons (replaced 1x1 placeholders)
+- Icon generator tool for easy updates
+- Service worker for offline caching
+- PWA manifest with proper configuration
+
+✅ **Enhanced User Experience**
+- "Save to Phone" button with clear instructions
+- Better iOS detection and handling
+- Improved error messages for install failures
+- Customer dashboard opens correctly from installed PWA
+- Clear instructions for manual installation (iOS)
+
+✅ **Technical Improvements**
+- Service worker registration and caching
+- PWA install prompt handling (`beforeinstallprompt` event)
+- Standalone mode detection
+- localStorage for customerId persistence
+- Better browser compatibility handling
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with PostgreSQL (production) / SQLite (local)
+- Tailwind CSS
+- Vercel for hosting
+- Supabase for PostgreSQL database
+- Vercel Blob Storage for file uploads
+- PWA manifest and service worker
+
+### Git Tag:
+```bash
+git checkout v0.8
+```
+
+### Commit Hash:
+`b43969c`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.8
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.8
+
+# Or create a new branch from this version
+git checkout -b restore-v0.8 v0.8
+```
+
+---
+
+## Version 0.7 - December 10, 2025
 
 ### Features Included:
 ✅ **AI-Native Program Creation (Conversational Setup)**
