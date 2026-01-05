@@ -307,7 +307,7 @@ export default function CustomerDashboard() {
           <div className="mt-4 md:mt-6">
             {isInstalled ? (
               <a
-                href="/"
+                href={`/customer/${customerId}`}
                 className="w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-colors font-semibold text-base md:text-lg flex items-center justify-center gap-2 md:gap-3 shadow-lg"
               >
                 <span>✅</span>
