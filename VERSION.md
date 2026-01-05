@@ -76,7 +76,7 @@ git checkout v0.9
 ```
 
 ### Commit Hash:
-`058b38c`
+`c82d6c5`
 
 ### How to Revert to This Version:
 ```bash
