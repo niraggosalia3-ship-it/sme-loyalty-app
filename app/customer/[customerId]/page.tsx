@@ -150,11 +150,16 @@ export default function CustomerDashboard() {
   const handleAddToWallet = async () => {
     if (!customer) return
 
-    // Check if iOS Safari (cannot intercept prompt)
+    // Check if iOS (Safari or Chrome - both use WebKit and don't support beforeinstallprompt)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
     
-    if (isIOS && isSafari) {
+    // iOS doesn't support beforeinstallprompt event (even Chrome on iOS uses WebKit)
+    // So we need to show manual instructions
+    if (isIOS) {
+      // Store customerId before showing instructions
+      if (customerId) {
+        localStorage.setItem('pwa_customerId', customerId)
+      }
       // Show iOS instructions modal
       setShowIOSInstructions(true)
       return
@@ -363,10 +368,15 @@ export default function CustomerDashboard() {
                     To add this wallet to your iPhone home screen:
                   </p>
                   <ol className="list-decimal list-inside space-y-3 text-sm">
-                    <li>Tap the <strong>Share</strong> button <span className="text-blue-600">(square with arrow)</span> at the bottom of your screen</li>
-                    <li>Scroll down in the menu and tap <strong>"Add to Home Screen"</strong></li>
+                    <li>Tap the <strong>Share</strong> button <span className="text-blue-600">(square with arrow ↑)</span> at the bottom of your screen</li>
+                    <li>Scroll down in the menu and tap <strong>"Add to Home Screen"</strong> or <strong>"Add to Home"</strong></li>
                     <li>Tap <strong>"Add"</strong> in the top right corner</li>
                   </ol>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+                    <p className="text-xs text-yellow-900">
+                      ⚠️ <strong>Note:</strong> Even on Chrome, iOS requires manual installation. This is an iOS limitation, not a browser issue.
+                    </p>
+                  </div>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
                     <p className="text-xs text-blue-900">
                       💡 Once added, you can access your wallet offline and it will work like an app!
