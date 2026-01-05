@@ -70,9 +70,15 @@ export default function CustomerDashboard() {
 
   // PWA Install Prompt Handler
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+    // Check if already installed (PWA standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
+    
+    if (isStandalone) {
       setIsInstalled(true)
+      // Store customerId if not already stored (for iOS manual installs)
+      if (customerId && !localStorage.getItem('pwa_customerId')) {
+        localStorage.setItem('pwa_customerId', customerId)
+      }
       return
     }
 
@@ -356,23 +362,46 @@ export default function CustomerDashboard() {
                   <p className="text-sm">
                     To add this wallet to your iPhone home screen:
                   </p>
-                  <ol className="list-decimal list-inside space-y-2 text-sm">
-                    <li>Tap the <strong>Share</strong> button at the bottom of your screen</li>
-                    <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                  <ol className="list-decimal list-inside space-y-3 text-sm">
+                    <li>Tap the <strong>Share</strong> button <span className="text-blue-600">(square with arrow)</span> at the bottom of your screen</li>
+                    <li>Scroll down in the menu and tap <strong>"Add to Home Screen"</strong></li>
                     <li>Tap <strong>"Add"</strong> in the top right corner</li>
                   </ol>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
                     <p className="text-xs text-blue-900">
                       💡 Once added, you can access your wallet offline and it will work like an app!
                     </p>
+                    <p className="text-xs text-blue-800 mt-2">
+                      📱 After adding, open the app from your home screen to access your personalized dashboard.
+                    </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowIOSInstructions(false)}
-                  className="mt-6 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Got it
-                </button>
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => {
+                      // Store customerId before they add to home screen
+                      if (customerId) {
+                        localStorage.setItem('pwa_customerId', customerId)
+                      }
+                      setShowIOSInstructions(false)
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Store customerId before they add to home screen
+                      if (customerId) {
+                        localStorage.setItem('pwa_customerId', customerId)
+                      }
+                      setShowIOSInstructions(false)
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Got it
+                  </button>
+                </div>
               </div>
             </div>
           )}
