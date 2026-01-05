@@ -209,16 +209,20 @@ export default function CustomerDashboard() {
       
       if (hasManifest && hasServiceWorker) {
         // App should be installable, but event didn't fire
-        // This can happen if user dismissed it before, or browser hasn't decided to show it yet
+        // Most common reason: Icons are too small (1x1 placeholders)
+        // Browsers require proper 192x192 and 512x512 icons
         const isAndroid = /Android/.test(navigator.userAgent)
         if (isAndroid) {
-          alert('The install prompt isn\'t available right now. This can happen if:\n- You dismissed it before\n- The browser hasn\'t determined the app is installable yet\n\nTo add manually:\n1. Tap the menu (three dots)\n2. Select "Add to Home screen" or "Install app"\n3. Tap "Add" or "Install"\n\nOr try refreshing the page and clicking again.')
+          alert('Install prompt not available. Common reasons:\n\n1. Icons are too small (need 192x192 and 512x512)\n2. You dismissed the prompt before\n3. Browser hasn\'t determined app is installable\n\nTo add manually:\n1. Tap menu (three dots) → "Add to Home screen"\n2. Or "Install app" → "Install"\n\nNote: Proper icons are required for automatic install prompt.')
         } else {
-          alert('Install prompt not available. Please:\n1. Look for the install icon in your browser\'s address bar\n2. Or use your browser\'s menu to add to home screen\n\nYou can also try refreshing the page.')
+          alert('Install prompt not available. Please:\n1. Look for install icon in address bar\n2. Or use browser menu to add to home screen\n\nNote: Proper icons (192x192, 512x512) are required.')
         }
       } else {
         // PWA requirements not met
-        alert('PWA installation requires:\n- Valid manifest file\n- Service worker registered\n- HTTPS connection\n\nPlease ensure all requirements are met, or use your browser\'s menu to add to home screen manually.')
+        const missing = []
+        if (!hasManifest) missing.push('Manifest file')
+        if (!hasServiceWorker) missing.push('Service worker')
+        alert(`PWA installation requires:\n- Valid manifest file\n- Service worker registered\n- HTTPS connection\n- Proper icons (192x192, 512x512)\n\nMissing: ${missing.join(', ')}\n\nPlease ensure all requirements are met.`)
       }
     }
   }
