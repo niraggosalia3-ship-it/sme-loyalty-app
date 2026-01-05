@@ -53,17 +53,53 @@ export default function CustomerDashboard() {
   const params = useParams()
   const customerId = params.customerId as string
 
+  // Type definition for beforeinstallprompt event
+  interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+  }
+
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [addingToWallet, setAddingToWallet] = useState(false)
   const [walletSupported, setWalletSupported] = useState(false)
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false)
+
+  // PWA Install Prompt Handler
+  useEffect(() => {
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setIsInstalled(true)
+      return
+    }
+
+    // Capture beforeinstallprompt event (Android Chrome, Edge, etc.)
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setInstallEvent(e as BeforeInstallPromptEvent)
+      setWalletSupported(true)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    // Check if iOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+    
+    if (isIOS && isSafari) {
+      setWalletSupported(true) // Show button, but will show instructions
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
+  }, [])
 
   useEffect(() => {
     fetchCustomerData()
-    // Always show wallet button (works on all devices)
-    // Mobile devices can save to home screen, desktop can view/print
-    setWalletSupported(true)
   }, [customerId])
 
   const fetchCustomerData = async () => {
@@ -95,40 +131,41 @@ export default function CustomerDashboard() {
   const handleAddToWallet = async () => {
     if (!customer) return
 
-    setAddingToWallet(true)
-    try {
-      // Detect platform
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-      const platform = isIOS ? 'ios' : 'android'
+    // Check if iOS Safari (cannot intercept prompt)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+    
+    if (isIOS && isSafari) {
+      // Show iOS instructions modal
+      setShowIOSInstructions(true)
+      return
+    }
 
-      // Generate pass
-      const res = await fetch('/api/passes/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerId: customer.id,
-          platform,
-        }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-
-        // Redirect to pass page (works for both iOS and Android)
-        if (data.passUrl) {
-          window.open(data.passUrl, '_blank')
-        } else {
-          alert(data.message || 'Pass generated successfully!')
+    // Android/Desktop: Use PWA install prompt
+    if (installEvent) {
+      setAddingToWallet(true)
+      try {
+        // Trigger the install prompt immediately (no delay)
+        await installEvent.prompt()
+        
+        // Wait for user's choice
+        const { outcome } = await installEvent.userChoice
+        
+        if (outcome === 'accepted') {
+          setIsInstalled(true)
+          setInstallEvent(null) // Clear the event
+          // Show success message
+          alert('Wallet added successfully! You can now access it from your home screen.')
         }
-      } else {
-        const error = await res.json()
-        alert(error.error || 'Failed to generate wallet pass')
+      } catch (error) {
+        console.error('Error showing install prompt:', error)
+        alert('Failed to show install prompt. Please try again.')
+      } finally {
+        setAddingToWallet(false)
       }
-    } catch (error) {
-      console.error('Error adding to wallet:', error)
-      alert('Failed to add to wallet. Please try again.')
-    } finally {
-      setAddingToWallet(false)
+    } else {
+      // Fallback: Show instructions if prompt not available
+      alert('Install prompt not available. Please use your browser\'s menu to add to home screen.')
     }
   }
 
@@ -210,31 +247,73 @@ export default function CustomerDashboard() {
 
           {/* Add to Wallet Button */}
           <div className="mt-4 md:mt-6">
-            <button
-              onClick={handleAddToWallet}
-              disabled={addingToWallet}
-              className="w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors font-semibold text-base md:text-lg flex items-center justify-center gap-2 md:gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {addingToWallet ? (
-                <>
-                  <span className="animate-spin">⏳</span>
-                  <span>Generating Pass...</span>
-                </>
-              ) : (
-                <>
-                  <span>💳</span>
-                  <span>Add to Wallet</span>
-                </>
-              )}
-            </button>
-            <p className="text-xs text-gray-500 text-center mt-2">
-              {/iPad|iPhone|iPod/.test(navigator.userAgent) 
-                ? 'Save to home screen for quick access' 
-                : /Android/.test(navigator.userAgent)
-                ? 'Save to home screen or add to Google Wallet'
-                : 'View your wallet card (can be saved as image)'}
-            </p>
+            {isInstalled ? (
+              <a
+                href="/"
+                className="w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-colors font-semibold text-base md:text-lg flex items-center justify-center gap-2 md:gap-3 shadow-lg"
+              >
+                <span>✅</span>
+                <span>Open Wallet</span>
+              </a>
+            ) : (
+              <>
+                <button
+                  onClick={handleAddToWallet}
+                  disabled={addingToWallet || (!installEvent && !(/iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)))}
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors font-semibold text-base md:text-lg flex items-center justify-center gap-2 md:gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  {addingToWallet ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      <span>Installing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>💳</span>
+                      <span>Add to Wallet</span>
+                    </>
+                  )}
+                </button>
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  {/iPad|iPhone|iPod/.test(navigator.userAgent) 
+                    ? 'Tap to see installation instructions' 
+                    : 'Install to access your wallet offline'}
+                </p>
+              </>
+            )}
           </div>
+
+          {/* iOS Instructions Modal */}
+          {showIOSInstructions && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Add to Home Screen
+                </h3>
+                <div className="space-y-4 text-gray-700">
+                  <p className="text-sm">
+                    To add this wallet to your iPhone home screen:
+                  </p>
+                  <ol className="list-decimal list-inside space-y-2 text-sm">
+                    <li>Tap the <strong>Share</strong> button at the bottom of your screen</li>
+                    <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                    <li>Tap <strong>"Add"</strong> in the top right corner</li>
+                  </ol>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                    <p className="text-xs text-blue-900">
+                      💡 Once added, you can access your wallet offline and it will work like an app!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowIOSInstructions(false)}
+                  className="mt-6 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* QR Code Section - Small and Scannable */}
           <div id="qr-code-section" className="mt-4 md:mt-6 bg-white rounded-lg p-4 md:p-6 border border-gray-200">
