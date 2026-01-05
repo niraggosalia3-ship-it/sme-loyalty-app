@@ -1,45 +1,173 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Icon Generator</title>
+    <title>PWA Icon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 2px solid #ddd;
+            margin: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 10px;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .success {
+            background: #c8e6c9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            display: none;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
 </head>
 <body>
-    <h1>PWA Icon Generator</h1>
-    <p>This creates simple placeholder icons. Replace with your actual logo later.</p>
-    <canvas id="icon192" width="192" height="192"></canvas>
-    <canvas id="icon512" width="512" height="512"></canvas>
+    <div class="container">
+        <h1>🎨 PWA Icon Generator</h1>
+        <div class="info">
+            <p><strong>⚠️ Important:</strong> These icons are required for the PWA install prompt to work!</p>
+            <p>Current icons are 1x1 pixels (too small). Browsers require proper 192x192 and 512x512 icons.</p>
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Click "Generate Icons" below</li>
+                <li>Icons will download automatically</li>
+                <li>Upload them to: <code>public/icons/</code> in your repo</li>
+                <li>Commit and push to fix the install prompt</li>
+            </ol>
+        </div>
+        <canvas id="icon192" width="192" height="192"></canvas>
+        <canvas id="icon512" width="512" height="512"></canvas>
+        <div>
+            <button onclick="generateIcons()">Generate Icons</button>
+        </div>
+        <div class="success" id="success">
+            ✅ Icons generated! Check your downloads folder.
+        </div>
+    </div>
     <script>
-        function createIcon(canvasId, size) {
-            const canvas = document.getElementById(canvasId);
-            const ctx = canvas.getContext('2d');
+        function generateIcons() {
+            const successDiv = document.getElementById('success');
+            successDiv.style.display = 'none';
             
-            // Gradient background
-            const gradient = ctx.createLinearGradient(0, 0, size, size);
-            gradient.addColorStop(0, '#667eea');
-            gradient.addColorStop(1, '#764ba2');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, size, size);
+            let downloaded = 0;
             
-            // White wallet icon (simple representation)
-            ctx.fillStyle = 'white';
-            ctx.font = `bold ${size * 0.3}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('💳', size / 2, size / 2);
+            function createIcon(canvasId, size) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+                
+                // Gradient background (purple to violet)
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+                
+                // White circle background for icon
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Wallet/card icon (simple representation)
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = Math.max(2, size * 0.02);
+                
+                // Draw a simple card shape
+                const cardWidth = size * 0.4;
+                const cardHeight = size * 0.25;
+                const cardX = (size - cardWidth) / 2;
+                const cardY = (size - cardHeight) / 2;
+                
+                // Card body with rounded corners
+                const radius = size * 0.03;
+                ctx.beginPath();
+                ctx.moveTo(cardX + radius, cardY);
+                ctx.lineTo(cardX + cardWidth - radius, cardY);
+                ctx.quadraticCurveTo(cardX + cardWidth, cardY, cardX + cardWidth, cardY + radius);
+                ctx.lineTo(cardX + cardWidth, cardY + cardHeight - radius);
+                ctx.quadraticCurveTo(cardX + cardWidth, cardY + cardHeight, cardX + cardWidth - radius, cardY + cardHeight);
+                ctx.lineTo(cardX + radius, cardY + cardHeight);
+                ctx.quadraticCurveTo(cardX, cardY + cardHeight, cardX, cardY + cardHeight - radius);
+                ctx.lineTo(cardX, cardY + radius);
+                ctx.quadraticCurveTo(cardX, cardY, cardX + radius, cardY);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Card lines (to make it look like a credit card)
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = Math.max(1, size * 0.015);
+                ctx.beginPath();
+                ctx.moveTo(cardX + cardWidth * 0.1, cardY + cardHeight * 0.3);
+                ctx.lineTo(cardX + cardWidth * 0.9, cardY + cardHeight * 0.3);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(cardX + cardWidth * 0.1, cardY + cardHeight * 0.6);
+                ctx.lineTo(cardX + cardWidth * 0.7, cardY + cardHeight * 0.6);
+                ctx.stroke();
+                
+                // Download as PNG
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `icon-${size}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    console.log(`Downloaded icon-${size}.png`);
+                    
+                    downloaded++;
+                    if (downloaded === 2) {
+                        successDiv.style.display = 'block';
+                    }
+                }, 'image/png');
+            }
             
-            // Download as PNG
-            canvas.toBlob((blob) => {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `icon-${size}.png`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
+            // Create icons with a delay between downloads
+            createIcon('icon192', 192);
+            setTimeout(() => createIcon('icon512', 512), 1000);
         }
         
-        createIcon('icon192', 192);
-        setTimeout(() => createIcon('icon512', 512), 500);
+        // Auto-generate on page load
+        window.addEventListener('load', () => {
+            setTimeout(generateIcons, 500);
+        });
     </script>
 </body>
 </html>
