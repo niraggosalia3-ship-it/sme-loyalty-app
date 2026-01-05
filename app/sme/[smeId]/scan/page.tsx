@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { Html5Qrcode } from 'html5-qrcode'
 import QRCode from 'react-qr-code'
+import StampCard from '@/app/components/StampCard'
 
 interface Benefit {
   id: string | null
@@ -21,11 +22,16 @@ interface Customer {
   name: string
   email: string
   points: number
+  stamps?: number
   tier: string
   qrCodeId?: string
   sme: {
     id: string
     companyName: string
+    loyaltyType?: string
+    stampsRequired?: number | null
+    primaryColor?: string | null
+    secondaryColor?: string | null
   }
   availableBenefits: Benefit[]
   allBenefits?: Benefit[]
@@ -52,6 +58,7 @@ export default function QRScanner() {
     taxAmount: '',
     description: '',
   })
+  const [stampCount, setStampCount] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [tierUpgrade, setTierUpgrade] = useState<TierUpgrade | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -228,7 +235,14 @@ export default function QRScanner() {
 
   const handleTransactionSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!customer || !transactionData.amount) {
+    if (!customer) {
+      return
+    }
+
+    const isStampProgram = customer.sme.loyaltyType === 'stamps'
+
+    // Validate based on program type
+    if (!isStampProgram && !transactionData.amount) {
       alert('Please enter transaction amount')
       return
     }
@@ -241,42 +255,66 @@ export default function QRScanner() {
         body: JSON.stringify({
           customerId: customer.customerId,
           smeId: customer.sme.id,
-          amount: parseFloat(transactionData.amount),
-          taxAmount: transactionData.taxAmount
-            ? parseFloat(transactionData.taxAmount)
-            : null,
-          description: transactionData.description || undefined,
+          ...(isStampProgram
+            ? {
+                stampsEarned: stampCount,
+                description: transactionData.description || undefined,
+              }
+            : {
+                amount: parseFloat(transactionData.amount),
+                taxAmount: transactionData.taxAmount
+                  ? parseFloat(transactionData.taxAmount)
+                  : null,
+                description: transactionData.description || undefined,
+              }),
         }),
       })
 
       if (res.ok) {
         const data = await res.json()
         
-        // Show tier upgrade notification if applicable
+        // Show tier upgrade notification if applicable (points programs)
         if (data.tierUpgrade && data.tierUpgrade.upgraded) {
           setTierUpgrade(data.tierUpgrade)
         }
 
-        // Update customer points
+        // Update customer data
         setCustomer({
           ...customer,
-          points: data.customer.points,
-          tier: data.customer.tier,
+          points: data.customer.points || customer.points,
+          stamps: data.customer.stamps || customer.stamps || 0,
+          tier: data.customer.tier || customer.tier,
         })
 
         // Add new transaction to the list
         setTransactions((prev) => [data.transaction, ...prev])
 
         // Reset form
-        setTransactionData({
-          amount: '',
-          taxAmount: '',
-          description: '',
-        })
+        if (isStampProgram) {
+          setStampCount(1)
+          setTransactionData({ ...transactionData, description: '' })
+        } else {
+          setTransactionData({
+            amount: '',
+            taxAmount: '',
+            description: '',
+          })
+        }
 
-        alert(
-          `Transaction added! Customer earned ${data.transaction.points} points.`
-        )
+        // Show success message
+        if (isStampProgram) {
+          const rewardMessage =
+            data.availableRewards && data.availableRewards.length > 0
+              ? `\n\n🎉 Reward Available: ${data.availableRewards.map((r: any) => r.rewardName).join(', ')}`
+              : ''
+          alert(
+            `Stamp${stampCount > 1 ? 's' : ''} added! Customer now has ${data.customer.stamps} stamp${data.customer.stamps !== 1 ? 's' : ''}.${rewardMessage}`
+          )
+        } else {
+          alert(
+            `Transaction added! Customer earned ${data.transaction.points} points.`
+          )
+        }
       } else {
         const error = await res.json()
         alert(error.error || 'Failed to add transaction')
@@ -513,6 +551,7 @@ export default function QRScanner() {
                     setCustomer(null)
                     setQrCodeId('')
                     setTransactionData({ amount: '', taxAmount: '', description: '' })
+                    setStampCount(1)
                     setTierUpgrade(null)
                   }}
                   className="w-full sm:w-auto px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
@@ -521,96 +560,180 @@ export default function QRScanner() {
                 </button>
               </div>
 
-              {/* Transaction Form - Moved to Top */}
-              <form onSubmit={handleTransactionSubmit} className="space-y-4 mb-4 md:mb-6 border-b border-gray-200 pb-4 md:pb-6">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3">
-                  Add Transaction
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Amount ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={transactionData.amount}
-                      onChange={(e) =>
-                        setTransactionData({
-                          ...transactionData,
-                          amount: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
-                      required
-                    />
+              {/* Transaction Form - Conditional Based on Program Type */}
+              {customer.sme.loyaltyType === 'stamps' ? (
+                <form onSubmit={handleTransactionSubmit} className="space-y-4 mb-4 md:mb-6 border-b border-gray-200 pb-4 md:pb-6">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3">
+                    Add Stamps
+                  </h3>
+                  
+                  {/* Stamp Counter */}
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setStampCount(Math.max(1, stampCount - 1))}
+                      className="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-2xl font-bold text-gray-700"
+                    >
+                      −
+                    </button>
+                    <div className="text-center">
+                      <div className="text-4xl md:text-5xl font-bold" style={{ color: customer.sme.primaryColor || '#3B82F6' }}>
+                        {stampCount}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        Stamp{stampCount !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStampCount(stampCount + 1)}
+                      className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-2xl font-bold text-white"
+                    >
+                      +
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tax Amount ($) <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={transactionData.taxAmount}
-                      onChange={(e) =>
-                        setTransactionData({
-                          ...transactionData,
-                          taxAmount: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description <span className="text-gray-400">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={transactionData.description}
-                    onChange={(e) =>
-                      setTransactionData({
-                        ...transactionData,
-                        description: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
-                    placeholder="e.g., Product purchase"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full px-4 md:px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold text-base"
-                >
-                  {submitting ? 'Processing...' : 'Add Transaction'}
-                </button>
-              </form>
 
-              <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
-                <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-200">
-                  <p className="text-xs md:text-sm font-medium text-blue-600">Points</p>
-                  <p className="text-xl md:text-2xl font-bold text-blue-900">
-                    {customer.points}
-                  </p>
+                  {/* Stamp Card Progress */}
+                  {customer.sme.stampsRequired && (
+                    <div className="mb-4">
+                      <StampCard
+                        currentStamps={customer.stamps || 0}
+                        totalStamps={customer.sme.stampsRequired}
+                        primaryColor={customer.sme.primaryColor}
+                        secondaryColor={customer.sme.secondaryColor}
+                        size="small"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={transactionData.description}
+                      onChange={(e) =>
+                        setTransactionData({
+                          ...transactionData,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
+                      placeholder="e.g., Purchase transaction"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full px-4 md:px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold text-base"
+                  >
+                    {submitting ? 'Processing...' : `Add ${stampCount} Stamp${stampCount !== 1 ? 's' : ''}`}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleTransactionSubmit} className="space-y-4 mb-4 md:mb-6 border-b border-gray-200 pb-4 md:pb-6">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3">
+                    Add Transaction
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Amount ($)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={transactionData.amount}
+                        onChange={(e) =>
+                          setTransactionData({
+                            ...transactionData,
+                            amount: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tax Amount ($) <span className="text-gray-400">(optional)</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={transactionData.taxAmount}
+                        onChange={(e) =>
+                          setTransactionData({
+                            ...transactionData,
+                            taxAmount: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={transactionData.description}
+                      onChange={(e) =>
+                        setTransactionData({
+                          ...transactionData,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
+                      placeholder="e.g., Product purchase"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full px-4 md:px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold text-base"
+                  >
+                    {submitting ? 'Processing...' : 'Add Transaction'}
+                  </button>
+                </form>
+              )}
+
+              {/* Stats Display - Conditional Based on Program Type */}
+              {customer.sme.loyaltyType === 'stamps' ? (
+                <div className="mb-4 md:mb-6">
+                  <div className="bg-blue-50 rounded-lg p-4 md:p-6 border border-blue-200">
+                    <p className="text-xs md:text-sm font-medium text-blue-600 mb-2">Stamps</p>
+                    <p className="text-3xl md:text-4xl font-bold text-blue-900">
+                      {customer.stamps || 0} / {customer.sme.stampsRequired || 10}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-amber-50 rounded-lg p-3 md:p-4 border border-amber-200">
-                  <p className="text-xs md:text-sm font-medium text-amber-600">Tier</p>
-                  <p className="text-xl md:text-2xl font-bold text-amber-900">
-                    {customer.tier}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+                  <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-200">
+                    <p className="text-xs md:text-sm font-medium text-blue-600">Points</p>
+                    <p className="text-xl md:text-2xl font-bold text-blue-900">
+                      {customer.points}
+                    </p>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-3 md:p-4 border border-amber-200">
+                    <p className="text-xs md:text-sm font-medium text-amber-600">Tier</p>
+                    <p className="text-xl md:text-2xl font-bold text-amber-900">
+                      {customer.tier}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3 md:p-4 border border-green-200">
+                    <p className="text-xs md:text-sm font-medium text-green-600">Benefits</p>
+                    <p className="text-xl md:text-2xl font-bold text-green-900">
+                      {customer.availableBenefits.length}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-green-50 rounded-lg p-3 md:p-4 border border-green-200">
-                  <p className="text-xs md:text-sm font-medium text-green-600">Benefits</p>
-                  <p className="text-xl md:text-2xl font-bold text-green-900">
-                    {customer.availableBenefits.length}
-                  </p>
-                </div>
-              </div>
+              )}
 
               {/* Customer QR Code - Small and Scannable */}
               <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">

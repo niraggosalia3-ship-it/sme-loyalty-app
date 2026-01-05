@@ -6,21 +6,19 @@ import { notifyWalletPassUpdate } from '@/lib/push-notifications'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { customerId, amount, taxAmount, description, smeId } = body
-
-    // Validate required fields
-    if (!customerId || amount === undefined || !smeId) {
-      return NextResponse.json(
-        { error: 'Customer ID, amount, and SME ID are required' },
-        { status: 400 }
-      )
-    }
+    const { customerId, amount, taxAmount, description, smeId, stampsEarned } = body
 
     // Verify customer exists and belongs to SME (data isolation)
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
       include: {
-        sme: true,
+        sme: {
+          include: {
+            stampRewards: {
+              orderBy: { stampsRequired: 'asc' },
+            },
+          },
+        },
       },
     })
 
@@ -32,6 +30,79 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Customer does not belong to this SME' },
         { status: 403 }
+      )
+    }
+
+    const loyaltyType = customer.sme.loyaltyType || 'points'
+
+    // Handle stamp-based transactions
+    if (loyaltyType === 'stamps') {
+      // Validate stamps
+      const stampsToAdd = stampsEarned || 1
+      if (stampsToAdd < 1) {
+        return NextResponse.json(
+          { error: 'Must add at least 1 stamp' },
+          { status: 400 }
+        )
+      }
+
+      // Update customer stamps
+      const newStampsTotal = (customer.stamps || 0) + stampsToAdd
+
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: { stamps: newStampsTotal },
+      })
+
+      // Check for available rewards (milestones reached)
+      const availableRewards = customer.sme.stampRewards.filter(
+        (reward) => newStampsTotal >= reward.stampsRequired
+      )
+
+      // Create transaction record
+      const transaction = await prisma.transaction.create({
+        data: {
+          customerId,
+          points: 0, // No points for stamp transactions
+          stampsEarned: stampsToAdd,
+          description: description || `Stamp added (${stampsToAdd} stamp${stampsToAdd > 1 ? 's' : ''})`,
+          amount: null,
+          taxAmount: null,
+        },
+      })
+
+      // Send push notification to update wallet pass
+      try {
+        await notifyWalletPassUpdate(customerId)
+      } catch (error) {
+        console.error('Error sending wallet pass update notification:', error)
+      }
+
+      return NextResponse.json({
+        transaction: {
+          id: transaction.id,
+          customerId: transaction.customerId,
+          stampsEarned: transaction.stampsEarned,
+          description: transaction.description,
+          createdAt: transaction.createdAt,
+        },
+        customer: {
+          stamps: newStampsTotal,
+        },
+        availableRewards: availableRewards.map((reward) => ({
+          stampsRequired: reward.stampsRequired,
+          rewardName: reward.rewardName,
+          rewardDescription: reward.rewardDescription,
+        })),
+      })
+    }
+
+    // Handle points-based transactions (existing logic)
+    // Validate required fields
+    if (amount === undefined) {
+      return NextResponse.json(
+        { error: 'Amount is required for points-based transactions' },
+        { status: 400 }
       )
     }
 
@@ -57,6 +128,7 @@ export async function POST(request: NextRequest) {
       data: {
         customerId,
         points: pointsEarned,
+        stampsEarned: null,
         description: description || `Purchase of $${amount.toFixed(2)}`,
         amount: amount || null,
         taxAmount: taxAmount || null,

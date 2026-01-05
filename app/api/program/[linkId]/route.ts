@@ -12,6 +12,9 @@ export async function GET(
         tiers: {
           orderBy: { order: 'asc' },
         },
+        stampRewards: {
+          orderBy: { stampsRequired: 'asc' },
+        },
       },
     })
 

@@ -14,6 +14,9 @@ export async function GET(
             tiers: {
               orderBy: { order: 'asc' },
             },
+            stampRewards: {
+              orderBy: { stampsRequired: 'asc' },
+            },
           },
         },
         customerBenefits: {
@@ -87,13 +90,20 @@ export async function GET(
       name: customer.name,
       email: customer.email,
       points: customer.points,
+      stamps: customer.stamps || 0,
       tier: customer.tier,
       qrCodeId: customer.qrCodeId,
       lastTierUpgradeDate: customer.lastTierUpgradeDate,
       sme: {
+        id: customer.sme.id,
         companyName: customer.sme.companyName,
         bannerImageUrl: customer.sme.bannerImageUrl || null,
         uniqueLinkId: customer.sme.uniqueLinkId,
+        loyaltyType: customer.sme.loyaltyType || 'points',
+        stampsRequired: customer.sme.stampsRequired || null,
+        primaryColor: customer.sme.primaryColor || null,
+        secondaryColor: customer.sme.secondaryColor || null,
+        stampRewards: customer.sme.stampRewards || [],
       },
       tierBenefits,
       tierUpgrade: tierUpgradeInfo,

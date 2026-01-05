@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import QRCode from 'react-qr-code'
+import StampCard from '@/app/components/StampCard'
 
 interface TierBenefit {
   name: string
@@ -25,18 +26,32 @@ interface TierUpgrade {
   unlockedBenefits: string[]
 }
 
+interface StampReward {
+  id: string
+  stampsRequired: number
+  rewardName: string
+  rewardDescription?: string | null
+}
+
 interface Customer {
   id: string
   name: string
   email: string
   points: number
+  stamps?: number
   tier: string
   qrCodeId: string
   lastTierUpgradeDate?: string | null
   sme: {
+    id: string
     companyName: string
     bannerImageUrl: string | null
     uniqueLinkId: string
+    loyaltyType?: string
+    stampsRequired?: number | null
+    primaryColor?: string | null
+    secondaryColor?: string | null
+    stampRewards?: StampReward[]
   }
   tierBenefits: TierBenefits[]
   tierUpgrade?: TierUpgrade | null
@@ -45,6 +60,7 @@ interface Customer {
 interface Transaction {
   id: string
   points: number
+  stampsEarned?: number | null
   description: string
   createdAt: string
 }
@@ -304,17 +320,125 @@ export default function CustomerDashboard() {
               </div>
             )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="bg-blue-50 rounded-lg p-4 md:p-6 border border-blue-200">
-              <h2 className="text-xs md:text-sm font-medium text-blue-600 mb-2">Points Balance</h2>
-              <p className="text-3xl md:text-4xl font-bold text-blue-900">{customer.points}</p>
-            </div>
+          {/* Display Based on Program Type */}
+          {customer.sme.loyaltyType === 'stamps' ? (
+            <div className="bg-white rounded-lg p-6 md:p-8 border border-gray-200 mb-4 md:mb-6">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 text-center">
+                Your Stamp Card
+              </h2>
+              <StampCard
+                currentStamps={customer.stamps || 0}
+                totalStamps={customer.sme.stampsRequired || 10}
+                primaryColor={customer.sme.primaryColor}
+                secondaryColor={customer.sme.secondaryColor}
+                size="large"
+              />
+              
+              {/* Available Rewards */}
+              {customer.sme.stampRewards && customer.sme.stampRewards.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3">
+                    Available Rewards
+                  </h3>
+                  <div className="space-y-3">
+                    {customer.sme.stampRewards
+                      .filter(
+                        (reward) =>
+                          (customer.stamps || 0) >= reward.stampsRequired
+                      )
+                      .map((reward) => (
+                        <div
+                          key={reward.id}
+                          className="bg-green-50 border-2 border-green-500 rounded-lg p-4"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-green-900">
+                                {reward.rewardName}
+                              </h4>
+                              {reward.rewardDescription && (
+                                <p className="text-sm text-green-800 mt-1">
+                                  {reward.rewardDescription}
+                                </p>
+                              )}
+                              <p className="text-xs text-green-700 mt-2">
+                                Requires {reward.stampsRequired} stamp
+                                {reward.stampsRequired !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                            <button
+                              onClick={async () => {
+                                if (
+                                  !confirm(
+                                    `Redeem reward: ${reward.rewardName}? This will use ${reward.stampsRequired} stamp${reward.stampsRequired !== 1 ? 's' : ''}.`
+                                  )
+                                ) {
+                                  return
+                                }
 
-            <div className="bg-amber-50 rounded-lg p-4 md:p-6 border border-amber-200">
-              <h2 className="text-xs md:text-sm font-medium text-amber-600 mb-2">Current Tier</h2>
-              <p className="text-3xl md:text-4xl font-bold text-amber-900">{customer.tier}</p>
+                                try {
+                                  const res = await fetch('/api/rewards/redeem', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      customerId: customer.id,
+                                      stampRewardId: reward.id,
+                                      smeId: customer.sme.id,
+                                    }),
+                                  })
+
+                                  if (res.ok) {
+                                    const data = await res.json()
+                                    setCustomer({
+                                      ...customer,
+                                      stamps: data.customer.stamps,
+                                    })
+                                    alert(
+                                      `Reward redeemed! You now have ${data.customer.stamps} stamp${data.customer.stamps !== 1 ? 's' : ''} remaining.`
+                                    )
+                                    // Refresh customer data
+                                    fetchCustomerData()
+                                  } else {
+                                    const error = await res.json()
+                                    alert(error.error || 'Failed to redeem reward')
+                                  }
+                                } catch (error) {
+                                  console.error('Error redeeming reward:', error)
+                                  alert('Failed to redeem reward')
+                                }
+                              }}
+                              className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm"
+                            >
+                              Redeem
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    {customer.sme.stampRewards.filter(
+                      (reward) =>
+                        (customer.stamps || 0) >= reward.stampsRequired
+                    ).length === 0 && (
+                      <p className="text-sm text-gray-600 text-center py-4">
+                        Keep collecting stamps to unlock rewards!
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="bg-blue-50 rounded-lg p-4 md:p-6 border border-blue-200">
+                <h2 className="text-xs md:text-sm font-medium text-blue-600 mb-2">Points Balance</h2>
+                <p className="text-3xl md:text-4xl font-bold text-blue-900">{customer.points}</p>
+              </div>
+
+              <div className="bg-amber-50 rounded-lg p-4 md:p-6 border border-amber-200">
+                <h2 className="text-xs md:text-sm font-medium text-amber-600 mb-2">Current Tier</h2>
+                <p className="text-3xl md:text-4xl font-bold text-amber-900">{customer.tier}</p>
+              </div>
+            </div>
+          )}
 
           {/* Save to Phone Button */}
           <div className="mt-4 md:mt-6">
@@ -437,8 +561,8 @@ export default function CustomerDashboard() {
             </p>
           </div>
 
-          {/* Tier Benefits Section */}
-          {customer.tierBenefits && customer.tierBenefits.length > 0 && (
+          {/* Tier Benefits Section - Only for Points Programs */}
+          {customer.sme.loyaltyType !== 'stamps' && customer.tierBenefits && customer.tierBenefits.length > 0 && (
             <div id="benefits-section" className="mt-4 md:mt-6 bg-white rounded-lg p-4 md:p-6 border border-gray-200">
               <h2 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">
                 Your Benefits

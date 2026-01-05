@@ -12,6 +12,9 @@ export async function GET(
         tiers: {
           orderBy: { order: 'asc' },
         },
+        stampRewards: {
+          orderBy: { stampsRequired: 'asc' },
+        },
       },
     })
 
@@ -42,7 +45,10 @@ export async function PUT(
       pointsMultiplier,
       primaryColor,
       secondaryColor,
+      loyaltyType,
+      stampsRequired,
       tiers,
+      stampRewards,
     } = body
 
     // Verify SME exists
@@ -64,10 +70,12 @@ export async function PUT(
         ...(pointsMultiplier !== undefined && { pointsMultiplier: parseFloat(pointsMultiplier) || 1.0 }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(secondaryColor !== undefined && { secondaryColor }),
+        ...(loyaltyType !== undefined && { loyaltyType }),
+        ...(stampsRequired !== undefined && { stampsRequired: stampsRequired ? parseInt(stampsRequired) : null }),
       },
     })
 
-    // Update tiers if provided
+    // Update tiers if provided (only for points programs)
     if (tiers && Array.isArray(tiers)) {
       // Delete existing tiers
       await prisma.tier.deleteMany({
@@ -89,12 +97,36 @@ export async function PUT(
       }
     }
 
-    // Return updated program with tiers
+    // Update stamp rewards if provided (only for stamp programs)
+    if (stampRewards && Array.isArray(stampRewards)) {
+      // Delete existing stamp rewards
+      await prisma.stampReward.deleteMany({
+        where: { smeId: params.smeId },
+      })
+
+      // Create new stamp rewards
+      if (stampRewards.length > 0) {
+        await prisma.stampReward.createMany({
+          data: stampRewards.map((reward: any, index: number) => ({
+            smeId: params.smeId,
+            stampsRequired: parseInt(reward.stampsRequired) || 0,
+            rewardName: reward.rewardName || '',
+            rewardDescription: reward.rewardDescription || null,
+            order: index,
+          })),
+        })
+      }
+    }
+
+    // Return updated program with tiers and stamp rewards
     const program = await prisma.sME.findUnique({
       where: { id: params.smeId },
       include: {
         tiers: {
           orderBy: { order: 'asc' },
+        },
+        stampRewards: {
+          orderBy: { stampsRequired: 'asc' },
         },
       },
     })

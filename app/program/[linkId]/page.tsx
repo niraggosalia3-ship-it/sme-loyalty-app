@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import StampCard from '@/app/components/StampCard'
 
 interface Tier {
   id: string
@@ -10,6 +11,14 @@ interface Tier {
   pointsRequired: number
   benefits: string
   color: string | null
+  order: number
+}
+
+interface StampReward {
+  id: string
+  stampsRequired: number
+  rewardName: string
+  rewardDescription: string | null
   order: number
 }
 
@@ -24,7 +33,10 @@ interface Program {
   pointsMultiplier: number
   primaryColor: string | null
   secondaryColor: string | null
+  loyaltyType?: 'points' | 'stamps'
+  stampsRequired?: number | null
   tiers: Tier[]
+  stampRewards?: StampReward[]
 }
 
 export default function ProgramPage() {
@@ -135,27 +147,30 @@ export default function ProgramPage() {
         </div>
 
         {/* How to Earn Points Section */}
-        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6 md:mb-8">
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-3 md:mb-4 flex items-center">
-            <span className="mr-2">🎯</span>
-            How to Earn Points
-          </h2>
-          <div className="mb-3 md:mb-4 p-3 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-base md:text-lg font-semibold text-blue-900">
-              Earn {program.pointsMultiplier || 1} point{(program.pointsMultiplier || 1) !== 1 ? 's' : ''} for every $1 you spend!
-            </p>
-          </div>
-          {program.pointsEarningRules && (
-            <div className="prose max-w-none">
-              <p className="text-sm md:text-base text-gray-700 whitespace-pre-line">
-                {program.pointsEarningRules}
+        {/* How to Earn Section - Conditional Based on Program Type */}
+        {program.loyaltyType === 'points' && (
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6 md:mb-8">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-3 md:mb-4 flex items-center">
+              <span className="mr-2">🎯</span>
+              How to Earn Points
+            </h2>
+            <div className="mb-3 md:mb-4 p-3 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-base md:text-lg font-semibold text-blue-900">
+                Earn {program.pointsMultiplier || 1} point{(program.pointsMultiplier || 1) !== 1 ? 's' : ''} for every $1 you spend!
               </p>
             </div>
-          )}
-        </div>
+            {program.pointsEarningRules && (
+              <div className="prose max-w-none">
+                <p className="text-sm md:text-base text-gray-700 whitespace-pre-line">
+                  {program.pointsEarningRules}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Tier Progression Section */}
-        {program.tiers && program.tiers.length > 0 && (
+        {/* Tier Progression Section - Only for Points Programs */}
+        {program.loyaltyType === 'points' && program.tiers && program.tiers.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6 md:mb-8">
             <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 md:mb-6 text-center">
               Membership Tiers
@@ -198,9 +213,67 @@ export default function ProgramPage() {
               </div>
             </div>
 
-            {/* Tier Cards - Always Expanded */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-              {program.tiers.map((tier, index) => {
+            {/* Display Based on Program Type */}
+            {(program.loyaltyType as string) === 'stamps' ? (
+              /* Stamp Card Display */
+              <div className="bg-white rounded-lg p-6 md:p-8 border border-gray-200">
+                <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 text-center">
+                  How It Works
+                </h2>
+                <div className="mb-6">
+                  <StampCard
+                    currentStamps={0}
+                    totalStamps={program.stampsRequired || 10}
+                    primaryColor={program.primaryColor}
+                    secondaryColor={program.secondaryColor}
+                    size="large"
+                  />
+                </div>
+                
+                {program.stampRewards && program.stampRewards.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Rewards
+                    </h3>
+                    <div className="space-y-3">
+                      {program.stampRewards.map((reward) => (
+                        <div
+                          key={reward.id}
+                          className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">
+                                {reward.rewardName}
+                              </h4>
+                              {reward.rewardDescription && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {reward.rewardDescription}
+                                </p>
+                              )}
+                            </div>
+                            <div className="ml-4 text-right">
+                              <span
+                                className="inline-block px-3 py-1 rounded-full text-sm font-semibold text-white"
+                                style={{
+                                  backgroundColor: program.primaryColor || '#3B82F6',
+                                }}
+                              >
+                                {reward.stampsRequired} stamp
+                                {reward.stampsRequired !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Tier Cards - Always Expanded */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                {program.tiers.map((tier, index) => {
                 const benefits = parseBenefits(tier.benefits)
                 const tierColor = getTierColor(tier, index)
 
@@ -262,7 +335,8 @@ export default function ProgramPage() {
                   </div>
                 )
               })}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -272,8 +346,9 @@ export default function ProgramPage() {
             Ready to Start Earning Rewards?
           </h2>
           <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
-            Join {program.companyName}'s loyalty program and start earning points
-            today!
+            {program.loyaltyType === 'stamps'
+              ? `Join ${program.companyName}'s loyalty program and start collecting stamps today!`
+              : `Join ${program.companyName}'s loyalty program and start earning points today!`}
           </p>
           <button
             onClick={handleJoinProgram}

@@ -9,10 +9,13 @@ interface LivePreviewProps {
 }
 
 export default function LivePreview({ state, onSave, isSaving }: LivePreviewProps) {
+  const isStampProgram = state.context.loyaltyType === 'stamps'
   const canSave =
     state.context.companyName &&
     state.selectedProgramName &&
-    state.selectedTiers.length > 0
+    (isStampProgram 
+      ? state.stampRewards.length > 0 && state.stampRewards.every(r => r.rewardName.trim().length > 0)
+      : state.selectedTiers.length > 0)
 
   return (
     <div className="p-6">
@@ -65,8 +68,57 @@ export default function LivePreview({ state, onSave, isSaving }: LivePreviewProp
           </div>
         )}
 
-        {/* Tiers */}
-        {state.selectedTiers.length > 0 && (
+        {/* Program Type */}
+        {state.context.loyaltyType && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Program Type
+            </label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold">
+              {state.context.loyaltyType === 'stamps' ? 'Stamp Card System' : 'Points & Tiers System'}
+            </div>
+          </div>
+        )}
+
+        {/* Stamp Configuration - Only for Stamp Programs */}
+        {isStampProgram && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Stamps Required
+              </label>
+              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                {state.stampsRequired} stamps per card
+              </div>
+            </div>
+            {state.stampRewards.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rewards ({state.stampRewards.length})
+                </label>
+                <div className="space-y-2">
+                  {state.stampRewards.map((reward, index) => (
+                    <div
+                      key={index}
+                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-900">{reward.rewardName || `Reward ${index + 1}`}</span>
+                        <span className="text-gray-600">{reward.stampsRequired} stamps</span>
+                      </div>
+                      {reward.rewardDescription && (
+                        <p className="text-xs text-gray-500 mt-1">{reward.rewardDescription}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Tiers - Only for Points Programs */}
+        {!isStampProgram && state.selectedTiers.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tiers ({state.selectedTiers.length})
@@ -87,15 +139,17 @@ export default function LivePreview({ state, onSave, isSaving }: LivePreviewProp
           </div>
         )}
 
-        {/* Points Multiplier */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Points Multiplier
-          </label>
-          <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-            {state.pointsMultiplier}x points per dollar
+        {/* Points Multiplier - Only for Points Programs */}
+        {!isStampProgram && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Points Multiplier
+            </label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+              {state.pointsMultiplier}x points per dollar
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Progress Indicator */}
         <div className="pt-4 border-t border-gray-200">
@@ -107,12 +161,22 @@ export default function LivePreview({ state, onSave, isSaving }: LivePreviewProp
             <div className={`text-xs ${state.selectedProgramName ? 'text-green-600' : 'text-gray-400'}`}>
               {state.selectedProgramName ? '✓' : '○'} Program Name
             </div>
-            <div className={`text-xs ${state.selectedTiers.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-              {state.selectedTiers.length > 0 ? '✓' : '○'} Tiers
-            </div>
-            <div className={`text-xs ${Object.keys(state.selectedBenefits).length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-              {Object.keys(state.selectedBenefits).length > 0 ? '✓' : '○'} Benefits
-            </div>
+            {isStampProgram ? (
+              <>
+                <div className={`text-xs ${state.stampRewards.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {state.stampRewards.length > 0 ? '✓' : '○'} Stamp Rewards
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={`text-xs ${state.selectedTiers.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {state.selectedTiers.length > 0 ? '✓' : '○'} Tiers
+                </div>
+                <div className={`text-xs ${Object.keys(state.selectedBenefits).length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                  {Object.keys(state.selectedBenefits).length > 0 ? '✓' : '○'} Benefits
+                </div>
+              </>
+            )}
             <div className={`text-xs ${state.selectedImage ? 'text-green-600' : 'text-gray-400'}`}>
               {state.selectedImage ? '✓' : '○'} Banner Image
             </div>

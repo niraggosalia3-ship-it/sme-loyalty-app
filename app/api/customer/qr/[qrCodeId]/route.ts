@@ -80,11 +80,16 @@ export async function GET(
       name: customer.name,
       email: customer.email,
       points: customer.points,
+      stamps: customer.stamps || 0,
       tier: customer.tier,
       qrCodeId: customer.qrCodeId,
       sme: {
         id: customer.sme.id,
         companyName: customer.sme.companyName,
+        loyaltyType: customer.sme.loyaltyType || 'points',
+        stampsRequired: customer.sme.stampsRequired || null,
+        primaryColor: customer.sme.primaryColor || null,
+        secondaryColor: customer.sme.secondaryColor || null,
       },
       availableBenefits: allBenefits.filter((b) => b.status === 'available'),
       allBenefits, // Include all benefits (available and used) for display

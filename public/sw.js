@@ -1,7 +1,7 @@
 // Service Worker for PWA - Caches customer dashboard and API responses
-const CACHE_NAME = 'loyalty-wallet-v1'
-const STATIC_CACHE = 'loyalty-static-v1'
-const API_CACHE = 'loyalty-api-v1'
+const CACHE_NAME = 'loyalty-wallet-v2'
+const STATIC_CACHE = 'loyalty-static-v2'
+const API_CACHE = 'loyalty-api-v2'
 
 // Assets to cache on install
 const STATIC_ASSETS = [

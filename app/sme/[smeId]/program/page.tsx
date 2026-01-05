@@ -13,6 +13,14 @@ interface Tier {
   order: number
 }
 
+interface StampReward {
+  id?: string
+  stampsRequired: number
+  rewardName: string
+  rewardDescription?: string | null
+  order: number
+}
+
 interface Program {
   id: string
   companyName: string
@@ -23,7 +31,10 @@ interface Program {
   pointsEarningRules: string | null
   primaryColor: string | null
   secondaryColor: string | null
+  loyaltyType?: string
+  stampsRequired?: number | null
   tiers: Tier[]
+  stampRewards?: StampReward[]
 }
 
 export default function ProgramEditor() {
@@ -41,8 +52,11 @@ export default function ProgramEditor() {
     pointsMultiplier: 1.0,
     primaryColor: '#3B82F6',
     secondaryColor: '#60A5FA',
+    loyaltyType: 'points',
+    stampsRequired: 10,
   })
   const [tiers, setTiers] = useState<Tier[]>([])
+  const [stampRewards, setStampRewards] = useState<StampReward[]>([])
 
   useEffect(() => {
     fetchProgram()
@@ -61,7 +75,27 @@ export default function ProgramEditor() {
           pointsMultiplier: data.pointsMultiplier || 1.0,
           primaryColor: data.primaryColor || '#3B82F6',
           secondaryColor: data.secondaryColor || '#60A5FA',
+          loyaltyType: data.loyaltyType || 'points',
+          stampsRequired: data.stampsRequired || 10,
         })
+        setStampRewards(
+          data.stampRewards && data.stampRewards.length > 0
+            ? data.stampRewards
+            : [
+                {
+                  stampsRequired: 5,
+                  rewardName: '10% Off',
+                  rewardDescription: 'Get 10% off your next purchase',
+                  order: 0,
+                },
+                {
+                  stampsRequired: 10,
+                  rewardName: 'Free Item',
+                  rewardDescription: 'Get a free item of your choice',
+                  order: 1,
+                },
+              ]
+        )
         setTiers(
           data.tiers && data.tiers.length > 0
             ? data.tiers
@@ -110,10 +144,16 @@ export default function ProgramEditor() {
           pointsMultiplier: formData.pointsMultiplier,
           primaryColor: formData.primaryColor,
           secondaryColor: formData.secondaryColor,
-          tiers: tiers.map((tier, index) => ({
+          loyaltyType: formData.loyaltyType,
+          stampsRequired: formData.loyaltyType === 'stamps' ? formData.stampsRequired : null,
+          tiers: formData.loyaltyType === 'points' ? tiers.map((tier, index) => ({
             ...tier,
             order: index,
-          })),
+          })) : [],
+          stampRewards: formData.loyaltyType === 'stamps' ? stampRewards.map((reward, index) => ({
+            ...reward,
+            order: index,
+          })) : [],
         }),
       })
 
@@ -231,48 +271,233 @@ export default function ProgramEditor() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                How to Earn Points
+            {/* Loyalty Type Toggle */}
+            <div className="border-t pt-4 mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Loyalty Program Type
               </label>
-              <textarea
-                value={formData.pointsEarningRules}
-                onChange={(e) =>
-                  setFormData({ ...formData, pointsEarningRules: e.target.value })
-                }
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                placeholder="Explain how customers can earn points...&#10;Example:&#10;• 1 point per $1 spent&#10;• 10 points for referrals&#10;• 5 points for reviews"
-              />
+              <div className="flex gap-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="loyaltyType"
+                    value="points"
+                    checked={formData.loyaltyType === 'points'}
+                    onChange={(e) =>
+                      setFormData({ ...formData, loyaltyType: e.target.value })
+                    }
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Points & Tiers System</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="loyaltyType"
+                    value="stamps"
+                    checked={formData.loyaltyType === 'stamps'}
+                    onChange={(e) =>
+                      setFormData({ ...formData, loyaltyType: e.target.value })
+                    }
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Stamp Card System</span>
+                </label>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Points Multiplier
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  value={formData.pointsMultiplier}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      pointsMultiplier: parseFloat(e.target.value) || 1.0,
-                    })
-                  }
-                  className="w-32 px-4 py-2 border border-gray-300 rounded-md"
-                  placeholder="1.0"
-                />
-                <span className="text-sm text-gray-600">
-                  points per $1 spent
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Example: 1.5 means customers earn 1.5 points for every $1 spent
-              </p>
-            </div>
+            {/* Conditional Fields Based on Loyalty Type */}
+            {formData.loyaltyType === 'points' ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    How to Earn Points
+                  </label>
+                  <textarea
+                    value={formData.pointsEarningRules}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pointsEarningRules: e.target.value })
+                    }
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    placeholder="Explain how customers can earn points...&#10;Example:&#10;• 1 point per $1 spent&#10;• 10 points for referrals&#10;• 5 points for reviews"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Points Multiplier
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={formData.pointsMultiplier}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pointsMultiplier: parseFloat(e.target.value) || 1.0,
+                        })
+                      }
+                      className="w-32 px-4 py-2 border border-gray-300 rounded-md"
+                      placeholder="1.0"
+                    />
+                    <span className="text-sm text-gray-600">
+                      points per $1 spent
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Example: 1.5 means customers earn 1.5 points for every $1 spent
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Total Stamps Required
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.stampsRequired}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          stampsRequired: parseInt(e.target.value) || 10,
+                        })
+                      }
+                      className="w-32 px-4 py-2 border border-gray-300 rounded-md"
+                      placeholder="10"
+                    />
+                    <span className="text-sm text-gray-600">
+                      stamps per card
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Number of stamps needed to complete a stamp card
+                  </p>
+                </div>
+
+                {/* Stamp Rewards Configuration */}
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Reward Milestones
+                    </h3>
+                    <button
+                      onClick={() => {
+                        const maxStamps = stampRewards.length > 0
+                          ? Math.max(...stampRewards.map(r => r.stampsRequired))
+                          : 0
+                        setStampRewards([
+                          ...stampRewards,
+                          {
+                            stampsRequired: maxStamps + 5,
+                            rewardName: '',
+                            rewardDescription: '',
+                            order: stampRewards.length,
+                          },
+                        ])
+                      }}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                    >
+                      + Add Reward
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {stampRewards.map((reward, index) => (
+                      <div
+                        key={index}
+                        className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <h4 className="font-medium text-gray-900">
+                            Reward #{index + 1}
+                          </h4>
+                          {stampRewards.length > 1 && (
+                            <button
+                              onClick={() => {
+                                setStampRewards(
+                                  stampRewards.filter((_, i) => i !== index)
+                                )
+                              }}
+                              className="text-red-600 hover:text-red-700 text-sm"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Stamps Required
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={reward.stampsRequired}
+                              onChange={(e) => {
+                                const updated = [...stampRewards]
+                                updated[index] = {
+                                  ...updated[index],
+                                  stampsRequired: parseInt(e.target.value) || 0,
+                                }
+                                setStampRewards(updated)
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Reward Name
+                            </label>
+                            <input
+                              type="text"
+                              value={reward.rewardName}
+                              onChange={(e) => {
+                                const updated = [...stampRewards]
+                                updated[index] = {
+                                  ...updated[index],
+                                  rewardName: e.target.value,
+                                }
+                                setStampRewards(updated)
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                              placeholder="e.g., Free Coffee"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Reward Description (Optional)
+                          </label>
+                          <textarea
+                            value={reward.rewardDescription || ''}
+                            onChange={(e) => {
+                              const updated = [...stampRewards]
+                              updated[index] = {
+                                ...updated[index],
+                                rewardDescription: e.target.value,
+                              }
+                              setStampRewards(updated)
+                            }}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            placeholder="Describe the reward..."
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -305,10 +530,11 @@ export default function ProgramEditor() {
           </div>
         </div>
 
-        {/* Tiers Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Membership Tiers</h2>
+        {/* Tiers Section - Only for Points Programs */}
+        {formData.loyaltyType === 'points' && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Membership Tiers</h2>
             <button
               onClick={addTier}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
@@ -401,6 +627,7 @@ export default function ProgramEditor() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Preview Link */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">

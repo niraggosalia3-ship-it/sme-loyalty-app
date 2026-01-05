@@ -1,6 +1,98 @@
 # Version History
 
-## Version 0.8 (Current) - January 5, 2025
+## Version 0.9 (Current) - January 5, 2025
+
+### Features Included:
+✅ **Stamp Card Loyalty System**
+- New stamp card-based loyalty program option
+- Toggle between Points & Tiers or Stamp Card during program creation
+- Configurable stamp milestones with rewards
+- Visual stamp card display with progress tracking
+- Stamp redemption system (subtracts required stamps, keeps remainder)
+- Multiple stamps per transaction support
+- SME can add multiple stamps at once via counter button
+- Stamp rewards configuration in program editor
+- Conditional display based on loyalty type (stamps vs points)
+
+✅ **AI Program Creation Enhancements**
+- Loyalty type selection (Points & Tiers vs Stamp Card) after company name
+- Conditional flow based on selected loyalty type
+- Stamp card configuration in AI creation flow
+- `StampConfigurator` component for reward milestones
+- Updated `ChatInterface` to handle loyalty type selection
+- Skip tier/benefit configuration for stamp programs
+- Live preview updates based on loyalty type
+
+✅ **Database Schema Updates**
+- Added `loyaltyType` field to SME model (default: "points")
+- Added `stampsRequired` field to SME model (for stamp programs)
+- Added `stamps` field to Customer model (default: 0)
+- Added `stampsEarned` field to Transaction model
+- New `StampReward` model for reward milestones
+- New `RedeemedReward` model for tracking redemptions
+- Removed `@unique` constraint from `Customer.externalId` (migration fix)
+
+✅ **API Endpoints**
+- Updated `/api/smes/id/[smeId]/program` to handle stamp rewards
+- Updated `/api/transactions` to process stamp-based transactions
+- New `/api/rewards/redeem` endpoint for stamp reward redemption
+- Updated customer and program endpoints to include stamp data
+
+✅ **UI Components**
+- New `StampCard` component for visual stamp card display
+- Circular stamp icons with star design
+- Program color integration for stamp visualization
+- Reward redemption buttons with availability status
+- Conditional rendering of stamp card vs points/tiers display
+
+✅ **Bug Fixes & Improvements**
+- Fixed JSX syntax error in program editor page (missing fragment wrapper)
+- Fixed TypeScript type errors in program display page
+- Improved error handling in program creation flow
+- Better error messages showing actual API errors
+- Service worker cache version updated (v2) to prevent CSS caching issues
+- Fixed CSS loading issues causing blank pages
+
+✅ **Pages Updated**
+- Customer dashboard: Conditional stamp card or points/tiers display
+- SME scan page: Stamp input or transaction form based on loyalty type
+- Program page: Conditional stamp card info or tiers display
+- Program editor: Loyalty type toggle and stamp rewards configuration
+- AI creation flow: Loyalty type selection and conditional configuration
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with PostgreSQL (production) / SQLite (local)
+- Tailwind CSS
+- Vercel for hosting
+- Supabase for PostgreSQL database
+- Vercel Blob Storage for file uploads
+- PWA manifest and service worker
+
+### Git Tag:
+```bash
+git checkout v0.9
+```
+
+### Commit Hash:
+`058b38c`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v0.9
+
+# Checkout this version (creates detached HEAD)
+git checkout v0.9
+
+# Or create a new branch from this version
+git checkout -b restore-v0.9 v0.9
+```
+
+---
+
+## Version 0.8 - January 5, 2025
 
 ### Features Included:
 ✅ **Progressive Web App (PWA) Implementation**

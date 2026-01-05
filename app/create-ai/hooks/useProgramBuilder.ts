@@ -72,6 +72,7 @@ export interface ProgramContext {
   visitFrequency: string | null
   uniqueValues: string[]
   programObjective: string | null
+  loyaltyType: 'points' | 'stamps' | null
 }
 
 export interface Tier {
@@ -97,10 +98,16 @@ export interface ImageOption {
   icon?: string
 }
 
+export interface StampReward {
+  stampsRequired: number
+  rewardName: string
+  rewardDescription: string | null
+}
+
 export interface ProgramBuilderState {
   // Context
   context: ProgramContext
-  step: 'context' | 'name' | 'tiers' | 'benefits' | 'image' | 'review'
+  step: 'context' | 'name' | 'tiers' | 'benefits' | 'stamps' | 'image' | 'review'
   
   // Suggestions
   programNameSuggestions: Array<{ name: string; explanation: string }>
@@ -111,6 +118,10 @@ export interface ProgramBuilderState {
   
   benefitSuggestions: Record<string, Benefit[]>
   selectedBenefits: Record<string, Benefit[]>
+  
+  // Stamp program fields
+  stampsRequired: number
+  stampRewards: StampReward[]
   
   imageSuggestions: ImageOption[]
   selectedImage: string | null
@@ -133,6 +144,7 @@ const initialState: ProgramBuilderState = {
     visitFrequency: null,
     uniqueValues: [],
     programObjective: null,
+    loyaltyType: null,
   },
   step: 'context',
   programNameSuggestions: [],
@@ -141,6 +153,8 @@ const initialState: ProgramBuilderState = {
   selectedTiers: [],
   benefitSuggestions: {},
   selectedBenefits: {},
+  stampsRequired: 10,
+  stampRewards: [],
   imageSuggestions: [],
   selectedImage: null,
   programDescription: null,
@@ -161,11 +175,15 @@ export function useProgramBuilder() {
   }, [])
 
   const selectProgramName = useCallback((name: string) => {
-    setState((prev) => ({
-      ...prev,
-      selectedProgramName: name,
-      step: 'tiers', // Always move to tiers step when name is selected
-    }))
+    setState((prev) => {
+      // Move to appropriate step based on loyalty type
+      const nextStep = prev.context.loyaltyType === 'stamps' ? 'stamps' : 'tiers'
+      return {
+        ...prev,
+        selectedProgramName: name,
+        step: nextStep,
+      }
+    })
   }, [])
 
   const updateTiers = useCallback((tiers: Tier[], advanceStep: boolean = false) => {
@@ -303,9 +321,27 @@ export function useProgramBuilder() {
     }
   }, [state.context, state.selectedTiers, state.selectedProgramName])
 
+  const updateStamps = useCallback((stampsRequired: number, stampRewards: StampReward[], advanceStep: boolean = false) => {
+    setState((prev) => ({
+      ...prev,
+      stampsRequired,
+      stampRewards,
+      step: advanceStep && prev.step === 'stamps' ? 'image' : prev.step,
+    }))
+  }, [])
+
   const saveProgram = useCallback(async () => {
-    if (!state.context.companyName || !state.selectedProgramName || state.selectedTiers.length === 0) {
+    // Validate based on program type
+    if (!state.context.companyName || !state.selectedProgramName) {
       return { success: false, error: 'Please complete all required fields' }
+    }
+
+    if (state.context.loyaltyType === 'points' && state.selectedTiers.length === 0) {
+      return { success: false, error: 'Please configure at least one tier' }
+    }
+
+    if (state.context.loyaltyType === 'stamps' && state.stampRewards.length === 0) {
+      return { success: false, error: 'Please configure at least one reward milestone' }
     }
 
     try {
@@ -350,22 +386,29 @@ export function useProgramBuilder() {
       })
 
       if (!smeResponse.ok) {
-        throw new Error('Failed to create SME account')
+        const errorData = await smeResponse.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.message || 'Failed to create SME account'
+        console.error('SME creation failed:', errorMessage, errorData)
+        throw new Error(errorMessage)
       }
 
       const smeData = await smeResponse.json()
       const smeId = smeData.id
 
-      // Step 3: Create program with tiers
+      // Step 3: Create program (points or stamps)
       const programResponse = await fetch(`/api/smes/id/${smeId}/program`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           programName: state.selectedProgramName,
           programDescription: state.programDescription || `Welcome to ${state.selectedProgramName}!`,
-          pointsEarningRules: state.pointsEarningRules || `Earn ${state.pointsMultiplier} point${state.pointsMultiplier !== 1 ? 's' : ''} for every dollar spent.`,
+          pointsEarningRules: state.context.loyaltyType === 'points' 
+            ? (state.pointsEarningRules || `Earn ${state.pointsMultiplier} point${state.pointsMultiplier !== 1 ? 's' : ''} for every dollar spent.`)
+            : null,
           pointsMultiplier: state.pointsMultiplier,
-          tiers: state.selectedTiers.map((tier) => {
+          loyaltyType: state.context.loyaltyType || 'points',
+          stampsRequired: state.context.loyaltyType === 'stamps' ? state.stampsRequired : null,
+          tiers: state.context.loyaltyType === 'points' ? state.selectedTiers.map((tier) => {
             // Get benefits for this tier from selectedBenefits
             const tierBenefits = state.selectedBenefits[tier.name] || []
             const benefitNames = tierBenefits.length > 0 
@@ -379,12 +422,21 @@ export function useProgramBuilder() {
               color: tier.color,
               order: tier.order,
             }
-          }),
+          }) : [],
+          stampRewards: state.context.loyaltyType === 'stamps' ? state.stampRewards.map((reward, index) => ({
+            stampsRequired: reward.stampsRequired,
+            rewardName: reward.rewardName,
+            rewardDescription: reward.rewardDescription,
+            order: index,
+          })) : [],
         }),
       })
 
       if (!programResponse.ok) {
-        throw new Error('Failed to create program')
+        const errorData = await programResponse.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.message || 'Failed to create program'
+        console.error('Program creation failed:', errorMessage, errorData)
+        throw new Error(errorMessage)
       }
 
       return {
@@ -404,6 +456,7 @@ export function useProgramBuilder() {
     selectProgramName,
     updateTiers,
     updateBenefits,
+    updateStamps,
     selectImage,
     generateSuggestions,
     saveProgram,

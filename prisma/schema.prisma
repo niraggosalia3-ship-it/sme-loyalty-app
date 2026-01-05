@@ -11,85 +11,111 @@ datasource db {
 }
 
 model SME {
-  id                String      @id @default(cuid())
-  companyName       String
-  uniqueLinkId      String      @unique
-  apiKey            String?     @unique // API key for integration
-  bannerImageUrl    String?
-  programName       String?     // e.g., "Gold Rewards Program"
-  programDescription String?    // Main program description
-  pointsEarningRules String?    // How customers earn points
-  pointsMultiplier  Float       @default(1.0) // Points per dollar spent
-  primaryColor      String?     // Brand primary color (hex)
-  secondaryColor    String?     // Brand secondary color (hex)
-  createdAt         DateTime    @default(now())
-  customers         Customer[]
-  tiers             Tier[]
+  id                 String        @id @default(cuid())
+  companyName        String
+  uniqueLinkId       String        @unique
+  apiKey             String?       @unique // API key for integration
+  bannerImageUrl     String?
+  programName        String? // e.g., "Gold Rewards Program"
+  programDescription String? // Main program description
+  pointsEarningRules String? // How customers earn points
+  pointsMultiplier   Float         @default(1.0) // Points per dollar spent
+  primaryColor       String? // Brand primary color (hex)
+  secondaryColor     String? // Brand secondary color (hex)
+  loyaltyType        String        @default("points") // "points" | "stamps"
+  stampsRequired     Int? // Number of stamps needed for reward (only for stamp programs)
+  createdAt          DateTime      @default(now())
+  customers          Customer[]
+  tiers              Tier[]
+  stampRewards       StampReward[]
 }
 
 model Tier {
-  id          String   @id @default(cuid())
-  smeId       String
-  name        String   // e.g., "Bronze", "Silver", "Gold"
-  pointsRequired Int   // Points needed to reach this tier
-  benefits    String   // JSON array of benefits or comma-separated
-  color       String?  // Tier color (hex)
-  order       Int      // Display order (0, 1, 2, ...)
-  sme         SME      @relation(fields: [smeId], references: [id], onDelete: Cascade)
+  id             String  @id @default(cuid())
+  smeId          String
+  name           String // e.g., "Bronze", "Silver", "Gold"
+  pointsRequired Int // Points needed to reach this tier
+  benefits       String // JSON array of benefits or comma-separated
+  color          String? // Tier color (hex)
+  order          Int // Display order (0, 1, 2, ...)
+  sme            SME     @relation(fields: [smeId], references: [id], onDelete: Cascade)
 }
 
 model Customer {
-  id                 String           @id @default(cuid())
-  smeId              String
-  name               String
-  birthDate          DateTime
-  email              String
-  gender             String
-  phone              String?          // Optional phone number
-  externalId         String?          // External system ID for mapping
-  points             Int              @default(0)
-  tier               String           @default("Bronze")
-  qrCodeId           String           @unique
+  id                  String            @id @default(cuid())
+  smeId               String
+  name                String
+  birthDate           DateTime
+  email               String
+  gender              String
+  phone               String? // Optional phone number
+  externalId          String? // External system ID for mapping
+  points              Int               @default(0)
+  stamps              Int               @default(0) // Current stamp count (for stamp programs)
+  tier                String            @default("Bronze")
+  qrCodeId            String            @unique
   lastTierUpgradeDate DateTime?
-  createdAt          DateTime         @default(now())
-  sme                SME              @relation(fields: [smeId], references: [id], onDelete: Cascade)
-  transactions       Transaction[]
-  customerBenefits   CustomerBenefit[]
-  walletPass         WalletPass?
+  createdAt           DateTime          @default(now())
+  sme                 SME               @relation(fields: [smeId], references: [id], onDelete: Cascade)
+  transactions        Transaction[]
+  customerBenefits    CustomerBenefit[]
+  walletPass          WalletPass?
+  redeemedRewards     RedeemedReward[]
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  customerId  String
-  points      Int
-  description String
-  amount      Float?   // Transaction amount (before tax)
-  taxAmount   Float?   // Tax amount
-  createdAt   DateTime @default(now())
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  customerId   String
+  points       Int
+  stampsEarned Int? // Number of stamps earned in this transaction (for stamp programs)
+  description  String
+  amount       Float? // Transaction amount (before tax)
+  taxAmount    Float? // Tax amount
+  createdAt    DateTime @default(now())
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 
 model CustomerBenefit {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   customerId  String
   tierId      String
   benefitName String
-  unlockedAt  DateTime @default(now())
+  unlockedAt  DateTime  @default(now())
   usedAt      DateTime?
-  status      String   @default("available") // "available" | "used" | "expired"
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status      String    @default("available") // "available" | "used" | "expired"
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 
 model WalletPass {
-  id                String   @id @default(cuid())
-  customerId        String   @unique
-  passTypeId        String   // Apple Pass Type ID or Google Wallet Class ID
-  serialNumber      String   @unique // Unique serial for the pass
-  authenticationToken String @unique // Token for web service authentication
-  deviceToken       String?  // Push notification token (Apple)
-  fcmToken          String?  // Firebase Cloud Messaging token (Google)
-  platform          String   // "ios" | "android"
-  lastUpdated       DateTime @default(now())
-  createdAt         DateTime @default(now())
-  customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  customerId          String   @unique
+  passTypeId          String // Apple Pass Type ID or Google Wallet Class ID
+  serialNumber        String   @unique // Unique serial for the pass
+  authenticationToken String   @unique // Token for web service authentication
+  deviceToken         String? // Push notification token (Apple)
+  fcmToken            String? // Firebase Cloud Messaging token (Google)
+  platform            String // "ios" | "android"
+  lastUpdated         DateTime @default(now())
+  createdAt           DateTime @default(now())
+  customer            Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model StampReward {
+  id                String           @id @default(cuid())
+  smeId             String
+  stampsRequired    Int // Number of stamps needed for this reward
+  rewardName        String // e.g., "Free Coffee", "10% Off"
+  rewardDescription String? // Optional description
+  order             Int // Display order (for multiple milestones)
+  sme               SME              @relation(fields: [smeId], references: [id], onDelete: Cascade)
+  redeemedRewards   RedeemedReward[]
+}
+
+model RedeemedReward {
+  id            String      @id @default(cuid())
+  customerId    String
+  stampRewardId String
+  redeemedAt    DateTime    @default(now())
+  customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  stampReward   StampReward @relation(fields: [stampRewardId], references: [id], onDelete: Cascade)
 }

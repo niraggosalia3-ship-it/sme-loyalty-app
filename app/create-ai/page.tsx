@@ -14,6 +14,7 @@ export default function CreateAIProgram() {
     selectProgramName,
     updateTiers,
     updateBenefits,
+    updateStamps,
     selectImage,
     generateSuggestions,
     saveProgram,
@@ -29,11 +30,12 @@ export default function CreateAIProgram() {
         // Redirect to the SME dashboard
         router.push(`/sme/${result.smeId}`)
       } else {
-        alert(result.error || 'Failed to create program')
+        console.error('Save program failed:', result.error)
+        alert(result.error || 'Failed to create program. Check the console for details.')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving program:', error)
-      alert('Failed to create program. Please try again.')
+      alert(`Failed to create program: ${error?.message || 'Unknown error'}. Check the console for details.`)
     } finally {
       setIsSaving(false)
     }
@@ -73,6 +75,7 @@ export default function CreateAIProgram() {
               selectProgramName={selectProgramName}
               updateTiers={updateTiers}
               updateBenefits={updateBenefits}
+              updateStamps={updateStamps}
               selectImage={selectImage}
               generateSuggestions={generateSuggestions}
             />

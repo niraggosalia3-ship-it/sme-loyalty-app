@@ -6,6 +6,7 @@ import InteractiveCard from './InteractiveCard'
 import ProgramNameSelector from './ProgramNameSelector'
 import TierBuilder from './TierBuilder'
 import BenefitSelector from './BenefitSelector'
+import StampConfigurator from './StampConfigurator'
 import ImageSelector from './ImageSelector'
 
 interface ChatInterfaceProps {
@@ -14,6 +15,7 @@ interface ChatInterfaceProps {
   selectProgramName: (name: string) => void
   updateTiers: (tiers: any[], advanceStep?: boolean) => void
   updateBenefits: (tierName: string, benefits: any[], advanceStep?: boolean) => void
+  updateStamps: (stampsRequired: number, stampRewards: any[]) => void
   selectImage: (imageUrl: string) => void
   generateSuggestions: (type: 'name' | 'tiers' | 'benefits' | 'image') => Promise<void>
 }
@@ -24,11 +26,12 @@ export default function ChatInterface({
   selectProgramName,
   updateTiers,
   updateBenefits,
+  updateStamps,
   selectImage,
   generateSuggestions,
 }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState('')
-  const [currentQuestion, setCurrentQuestion] = useState<'companyName' | 'programObjective' | null>(null)
+  const [currentQuestion, setCurrentQuestion] = useState<'companyName' | 'programObjective' | 'loyaltyType' | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -46,23 +49,35 @@ export default function ChatInterface({
     if (state.step !== 'context') {
       setCurrentQuestion(null)
     }
-  }, [state.step, state.context.uniqueValues.length]) // Only depend on step and uniqueValues, NOT the input values
+  }, [state.step, state.context.uniqueValues.length, currentQuestion]) // Only depend on step and uniqueValues, NOT the input values
 
-  // Auto-advance: Generate tiers when program name is selected
+  // Auto-advance: Generate tiers when program name is selected (only for points programs)
   useEffect(() => {
-    if (state.selectedProgramName && state.step === 'tiers' && state.tierSuggestions.length === 0 && !state.isGenerating) {
+    if (
+      state.selectedProgramName && 
+      state.step === 'tiers' && 
+      state.context.loyaltyType === 'points' &&
+      state.tierSuggestions.length === 0 && 
+      !state.isGenerating
+    ) {
       generateSuggestions('tiers')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.selectedProgramName, state.step, state.tierSuggestions.length, state.isGenerating])
+  }, [state.selectedProgramName, state.step, state.context.loyaltyType, state.tierSuggestions.length, state.isGenerating])
 
-  // Auto-advance: Generate benefits when tiers are selected
+  // Auto-advance: Generate benefits when tiers are selected (only for points programs)
   useEffect(() => {
-    if (state.selectedTiers.length > 0 && state.step === 'benefits' && Object.keys(state.benefitSuggestions).length === 0 && !state.isGenerating) {
+    if (
+      state.selectedTiers.length > 0 && 
+      state.step === 'benefits' && 
+      state.context.loyaltyType === 'points' &&
+      Object.keys(state.benefitSuggestions).length === 0 && 
+      !state.isGenerating
+    ) {
       generateSuggestions('benefits')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.selectedTiers.length, state.step, Object.keys(state.benefitSuggestions).length, state.isGenerating])
+  }, [state.selectedTiers.length, state.step, state.context.loyaltyType, Object.keys(state.benefitSuggestions).length, state.isGenerating])
 
   // Auto-advance: Generate images when step changes to image
   useEffect(() => {
@@ -112,7 +127,8 @@ export default function ChatInterface({
       state.context.visitFrequency &&
       state.context.uniqueValues.length > 0 &&
       state.context.companyName &&
-      state.context.programObjective
+      state.context.programObjective &&
+      state.context.loyaltyType
     ) {
       await generateSuggestions('name')
     }
@@ -324,7 +340,7 @@ export default function ChatInterface({
                           onClick={() => {
                             // Only advance if there's a value
                             if (state.context.companyName && state.context.companyName.trim().length > 0) {
-                              setCurrentQuestion('programObjective')
+                              setCurrentQuestion('loyaltyType')
                             }
                           }}
                           disabled={!state.context.companyName || state.context.companyName.trim().length === 0}
@@ -332,6 +348,46 @@ export default function ChatInterface({
                         >
                           Continue
                         </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Loyalty Type Question */}
+                {currentQuestion === 'loyaltyType' && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      🤖
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-gray-900 mb-3">Which type of loyalty program would you like to create?</p>
+                        <div className="space-y-3">
+                          <button
+                            onClick={() => {
+                              updateContext({ loyaltyType: 'points' })
+                              setCurrentQuestion('programObjective')
+                            }}
+                            className="w-full px-6 py-4 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-lg text-left"
+                          >
+                            <div className="font-semibold text-blue-900">Points & Tiers System</div>
+                            <div className="text-sm text-blue-700 mt-1">
+                              Customers earn points based on spending, unlock tiers with benefits
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => {
+                              updateContext({ loyaltyType: 'stamps' })
+                              setCurrentQuestion('programObjective')
+                            }}
+                            className="w-full px-6 py-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-lg text-left"
+                          >
+                            <div className="font-semibold text-green-900">Stamp Card System</div>
+                            <div className="text-sm text-green-700 mt-1">
+                              Simple stamp collection - customers get stamps per visit, unlock rewards at milestones
+                            </div>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -383,8 +439,29 @@ export default function ChatInterface({
           />
         )}
 
-        {/* Tier Builder */}
-        {state.step === 'tiers' && (
+        {/* Stamp Configuration - Only for Stamp Programs */}
+        {state.step === 'stamps' && state.context.loyaltyType === 'stamps' && (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              🤖
+            </div>
+            <div className="flex-1">
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-gray-900 mb-4">
+                  Great! Now let's configure your stamp card system. Set how many stamps are needed and what rewards customers can unlock.
+                </p>
+              </div>
+              <StampConfigurator
+                stampsRequired={state.stampsRequired}
+                stampRewards={state.stampRewards}
+                onUpdate={updateStamps}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Tier Builder - Only for Points Programs */}
+        {state.step === 'tiers' && state.context.loyaltyType === 'points' && (
           <>
             {state.isGenerating && state.tierSuggestions.length === 0 && (
               <div className="flex items-start gap-3">
@@ -409,8 +486,8 @@ export default function ChatInterface({
           </>
         )}
 
-        {/* Benefit Selector */}
-        {state.step === 'benefits' && (
+        {/* Benefit Selector - Only for Points Programs */}
+        {state.step === 'benefits' && state.context.loyaltyType === 'points' && (
           <>
             {state.isGenerating && Object.keys(state.benefitSuggestions).length === 0 && (
               <div className="flex items-start gap-3">
