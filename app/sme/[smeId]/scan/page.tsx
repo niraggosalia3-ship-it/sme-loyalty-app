@@ -343,27 +343,27 @@ export default function QRScanner() {
   }, [searchParams])
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">
           Scan Customer QR Code
         </h1>
 
         {/* QR Scanner Section */}
         {!customer && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4 md:mb-6">
             {!scanning && !manualEntry && (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <button
                   onClick={startScanning}
-                  className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-base md:text-lg"
                 >
                   Start QR Scanner
                 </button>
-                <div className="text-center text-gray-500">or</div>
+                <div className="text-center text-gray-500 text-sm">or</div>
                 <button
                   onClick={() => setManualEntry(true)}
-                  className="w-full px-6 py-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold"
+                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold text-base"
                 >
                   Enter QR Code Manually
                 </button>
@@ -375,7 +375,7 @@ export default function QRScanner() {
                 <div id="qr-reader" className="mb-4"></div>
                 <button
                   onClick={stopScanning}
-                  className="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  className="w-full px-4 md:px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 text-base"
                 >
                   Stop Scanner
                 </button>
@@ -392,15 +392,15 @@ export default function QRScanner() {
                     type="text"
                     value={qrCodeId}
                     onChange={(e) => setQrCodeId(e.target.value.toUpperCase())}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
                     placeholder="CUST-XXXXXXXX"
                     required
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="w-full sm:flex-1 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-base"
                   >
                     Lookup Customer
                   </button>
@@ -410,7 +410,7 @@ export default function QRScanner() {
                       setManualEntry(false)
                       setQrCodeId('')
                     }}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                    className="w-full sm:w-auto px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-base"
                   >
                     Cancel
                   </button>
@@ -425,20 +425,20 @@ export default function QRScanner() {
           <div className="space-y-6">
             {/* Tier Upgrade Notification */}
             {tierUpgrade && tierUpgrade.upgraded && (
-              <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-green-900 mb-2">
+              <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4 md:p-6">
+                <h3 className="text-lg md:text-xl font-bold text-green-900 mb-2">
                   🎉 Tier Upgrade!
                 </h3>
-                <p className="text-green-800">
+                <p className="text-sm md:text-base text-green-800">
                   Customer upgraded from <strong>{tierUpgrade.oldTier}</strong> to{' '}
                   <strong>{tierUpgrade.newTier}</strong>
                 </p>
                 {tierUpgrade.unlockedBenefits.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-sm font-semibold text-green-900">
+                    <p className="text-xs md:text-sm font-semibold text-green-900">
                       New Benefits Unlocked:
                     </p>
-                    <ul className="list-disc list-inside text-green-800 mt-1">
+                    <ul className="list-disc list-inside text-xs md:text-sm text-green-800 mt-1">
                       {tierUpgrade.unlockedBenefits.map((benefit, idx) => (
                         <li key={idx}>{benefit}</li>
                       ))}
@@ -447,7 +447,7 @@ export default function QRScanner() {
                 )}
                 <button
                   onClick={() => setTierUpgrade(null)}
-                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+                  className="mt-4 w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
                 >
                   Dismiss
                 </button>
@@ -455,13 +455,13 @@ export default function QRScanner() {
             )}
 
             {/* Customer Info Card */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-start mb-4">
+            <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">
                     {customer.name}
                   </h2>
-                  <p className="text-gray-600">{customer.email}</p>
+                  <p className="text-sm md:text-base text-gray-600">{customer.email}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -470,18 +470,18 @@ export default function QRScanner() {
                     setTransactionData({ amount: '', taxAmount: '', description: '' })
                     setTierUpgrade(null)
                   }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
                 >
                   Scan Another
                 </button>
               </div>
 
               {/* Transaction Form - Moved to Top */}
-              <form onSubmit={handleTransactionSubmit} className="space-y-4 mb-6 border-b border-gray-200 pb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              <form onSubmit={handleTransactionSubmit} className="space-y-4 mb-4 md:mb-6 border-b border-gray-200 pb-4 md:pb-6">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3">
                   Add Transaction
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Amount ($)
@@ -497,7 +497,7 @@ export default function QRScanner() {
                           amount: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
                       required
                     />
                   </div>
@@ -516,7 +516,7 @@ export default function QRScanner() {
                           taxAmount: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
                     />
                   </div>
                 </div>
@@ -533,35 +533,35 @@ export default function QRScanner() {
                         description: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
                     placeholder="e.g., Product purchase"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold"
+                  className="w-full px-4 md:px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold text-base"
                 >
                   {submitting ? 'Processing...' : 'Add Transaction'}
                 </button>
               </form>
 
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm font-medium text-blue-600">Points</p>
-                  <p className="text-2xl font-bold text-blue-900">
+              <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+                <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-200">
+                  <p className="text-xs md:text-sm font-medium text-blue-600">Points</p>
+                  <p className="text-xl md:text-2xl font-bold text-blue-900">
                     {customer.points}
                   </p>
                 </div>
-                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                  <p className="text-sm font-medium text-amber-600">Tier</p>
-                  <p className="text-2xl font-bold text-amber-900">
+                <div className="bg-amber-50 rounded-lg p-3 md:p-4 border border-amber-200">
+                  <p className="text-xs md:text-sm font-medium text-amber-600">Tier</p>
+                  <p className="text-xl md:text-2xl font-bold text-amber-900">
                     {customer.tier}
                   </p>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <p className="text-sm font-medium text-green-600">Benefits</p>
-                  <p className="text-2xl font-bold text-green-900">
+                <div className="bg-green-50 rounded-lg p-3 md:p-4 border border-green-200">
+                  <p className="text-xs md:text-sm font-medium text-green-600">Benefits</p>
+                  <p className="text-xl md:text-2xl font-bold text-green-900">
                     {customer.availableBenefits.length}
                   </p>
                 </div>
@@ -692,67 +692,103 @@ export default function QRScanner() {
               )}
 
               {/* Transaction History */}
-              <div className="mt-6 border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="mt-4 md:mt-6 border-t border-gray-200 pt-4 md:pt-6">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">
                   Transaction History
                 </h3>
                 {loadingTransactions ? (
-                  <p className="text-gray-500 text-center py-4">Loading transactions...</p>
+                  <p className="text-gray-500 text-center py-4 text-sm">Loading transactions...</p>
                 ) : transactions.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No transactions yet.</p>
+                  <p className="text-gray-500 text-center py-4 text-sm">No transactions yet.</p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Txn ID
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Date
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Description
-                          </th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Amount
-                          </th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Tax
-                          </th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Points
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {transactions.map((txn) => (
-                          <tr key={txn.id}>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                              {txn.id.substring(0, 8)}...
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                              {new Date(txn.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-900">
-                              {txn.description}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                              {txn.amount !== null ? `$${txn.amount.toFixed(2)}` : '-'}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                              {txn.taxAmount !== null ? `$${txn.taxAmount.toFixed(2)}` : '-'}
-                            </td>
-                            <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Txn ID
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Description
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Amount
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Tax
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Points
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {transactions.map((txn) => (
+                            <tr key={txn.id}>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                {txn.id.substring(0, 8)}...
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                {new Date(txn.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                {txn.description}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                                {txn.amount !== null ? `$${txn.amount.toFixed(2)}` : '-'}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                                {txn.taxAmount !== null ? `$${txn.taxAmount.toFixed(2)}` : '-'}
+                              </td>
+                              <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
+                                txn.points >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {txn.points >= 0 ? '+' : ''}{txn.points}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-3">
+                      {transactions.map((txn) => (
+                        <div key={txn.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900 mb-1">
+                                {txn.description || 'Transaction'}
+                              </p>
+                              <p className="text-xs text-gray-500 mb-1">
+                                {new Date(txn.createdAt).toLocaleDateString()}
+                              </p>
+                              <p className="text-xs text-gray-400 font-mono">
+                                ID: {txn.id.substring(0, 8)}...
+                              </p>
+                            </div>
+                            <div className={`text-right ml-3 ${
                               txn.points >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {txn.points >= 0 ? '+' : ''}{txn.points}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                              <p className="text-base font-bold">
+                                {txn.points >= 0 ? '+' : ''}{txn.points}
+                              </p>
+                              <p className="text-xs text-gray-500">points</p>
+                            </div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                            <span>Amount: {txn.amount !== null ? `$${txn.amount.toFixed(2)}` : '-'}</span>
+                            <span>Tax: {txn.taxAmount !== null ? `$${txn.taxAmount.toFixed(2)}` : '-'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

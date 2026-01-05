@@ -70,3 +70,4 @@ After making any changes:
 3. Check if Supabase project is active
 4. Try redeploying after adding postinstall script
 
+

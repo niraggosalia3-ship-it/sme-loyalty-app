@@ -503,3 +503,4 @@ npm install react-qr-reader
 
 **Ready to start implementation!**
 
+

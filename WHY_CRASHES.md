@@ -52,3 +52,4 @@ After the app stops crashing, we can:
 2. Fix the `DATABASE_URL` if needed
 3. Verify Supabase connection
 
+

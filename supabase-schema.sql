@@ -90,3 +90,4 @@ CREATE INDEX IF NOT EXISTS "Transaction_customerId_idx" ON "Transaction"("custom
 CREATE INDEX IF NOT EXISTS "CustomerBenefit_customerId_idx" ON "CustomerBenefit"("customerId");
 CREATE INDEX IF NOT EXISTS "CustomerBenefit_tierId_idx" ON "CustomerBenefit"("tierId");
 
+

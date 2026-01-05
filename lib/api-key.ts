@@ -20,3 +20,4 @@ export function isValidAPIKeyFormat(apiKey: string): boolean {
   return pattern.test(apiKey)
 }
 
+

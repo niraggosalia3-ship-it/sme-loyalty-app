@@ -63,3 +63,4 @@ After redeploying, test:
 - Visit: `https://sme-loyalty-app1.vercel.app/api/smes`
 - Should return `[]` (empty array) or your SMEs, not an error
 
+

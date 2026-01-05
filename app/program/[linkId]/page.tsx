@@ -112,7 +112,7 @@ export default function ProgramPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Banner Section */}
       {program.bannerImageUrl && (
-        <div className="w-full h-64 bg-gray-200 overflow-hidden">
+        <div className="w-full h-32 md:h-64 bg-gray-200 overflow-hidden">
           <img
             src={program.bannerImageUrl}
             alt={`${program.companyName} banner`}
@@ -121,33 +121,33 @@ export default function ProgramPage() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
         {/* Program Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
             {programTitle}
           </h1>
           {program.programDescription && (
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-sm md:text-lg text-gray-600 max-w-2xl mx-auto">
               {program.programDescription}
             </p>
           )}
         </div>
 
         {/* How to Earn Points Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
+        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-3 md:mb-4 flex items-center">
             <span className="mr-2">🎯</span>
             How to Earn Points
           </h2>
-          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-lg font-semibold text-blue-900">
+          <div className="mb-3 md:mb-4 p-3 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-base md:text-lg font-semibold text-blue-900">
               Earn {program.pointsMultiplier || 1} point{(program.pointsMultiplier || 1) !== 1 ? 's' : ''} for every $1 you spend!
             </p>
           </div>
           {program.pointsEarningRules && (
             <div className="prose max-w-none">
-              <p className="text-gray-700 whitespace-pre-line">
+              <p className="text-sm md:text-base text-gray-700 whitespace-pre-line">
                 {program.pointsEarningRules}
               </p>
             </div>
@@ -156,8 +156,8 @@ export default function ProgramPage() {
 
         {/* Tier Progression Section */}
         {program.tiers && program.tiers.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6 md:mb-8">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 md:mb-6 text-center">
               Membership Tiers
             </h2>
 
@@ -199,7 +199,7 @@ export default function ProgramPage() {
             </div>
 
             {/* Tier Cards - Always Expanded */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {program.tiers.map((tier, index) => {
                 const benefits = parseBenefits(tier.benefits)
                 const tierColor = getTierColor(tier, index)
@@ -267,17 +267,17 @@ export default function ProgramPage() {
         )}
 
         {/* Join Program CTA */}
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-lg shadow-md p-6 md:p-8 text-center">
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-3 md:mb-4">
             Ready to Start Earning Rewards?
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
             Join {program.companyName}'s loyalty program and start earning points
             today!
           </p>
           <button
             onClick={handleJoinProgram}
-            className="px-8 py-4 text-lg font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            className="w-full md:w-auto px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             style={{
               backgroundColor: primaryColor,
             }}

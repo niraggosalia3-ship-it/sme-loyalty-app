@@ -50,3 +50,4 @@ Once you update `NEXT_PUBLIC_APP_URL` and redeploy:
 
 After the page stops crashing, we still need to fix the database connection. But at least the app will work and show error messages instead of crashing.
 
+

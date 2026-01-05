@@ -56,3 +56,4 @@ psql "postgresql://postgres:gbZXQ%2F%2AE9y%21%21Ks%23@db.dkwewdazxjbmjihriplv.su
 
 Or test from Supabase SQL Editor to verify the database is accessible.
 
+

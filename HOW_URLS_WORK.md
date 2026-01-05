@@ -54,3 +54,4 @@
 
 The preview URLs are just temporary preview deployments - they're fine and don't need any configuration. They're automatically connected to GitHub and can access Supabase via the same DATABASE_URL environment variable.
 
+

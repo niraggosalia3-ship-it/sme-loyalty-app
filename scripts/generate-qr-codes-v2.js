@@ -57,3 +57,4 @@ async function generateMissingQRCodes() {
 
 generateMissingQRCodes()
 
+

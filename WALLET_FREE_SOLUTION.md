@@ -126,3 +126,4 @@ If you want to upgrade later:
 
 The wallet solution is ready to use! Customers can add their loyalty cards with one click and they'll update automatically.
 
+

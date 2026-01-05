@@ -38,3 +38,4 @@ Once tables exist in Supabase:
 - You can proceed with Vercel deployment
 - The app will work once deployed
 
+

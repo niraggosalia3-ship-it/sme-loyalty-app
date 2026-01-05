@@ -96,12 +96,12 @@ export default function CustomerForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-4 md:py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Banner Image */}
           {sme.bannerImageUrl && (
-            <div className="w-full h-48 bg-gray-200 overflow-hidden">
+            <div className="w-full h-32 md:h-48 bg-gray-200 overflow-hidden">
               <img
                 src={sme.bannerImageUrl}
                 alt={`${sme.companyName} banner`}
@@ -110,13 +110,13 @@ export default function CustomerForm() {
             </div>
           )}
           
-          <div className="p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="p-4 md:p-8">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
               Welcome to {sme.companyName}
             </h1>
-            <p className="text-gray-600 mb-6">Please fill in your details to get started</p>
+            <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">Please fill in your details to get started</p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                 Name *
@@ -126,7 +126,7 @@ export default function CustomerForm() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                 required
               />
             </div>
@@ -140,7 +140,7 @@ export default function CustomerForm() {
                 id="birthDate"
                 value={formData.birthDate}
                 onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                 required
               />
             </div>
@@ -154,7 +154,7 @@ export default function CustomerForm() {
                 id="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                 required
               />
             </div>
@@ -167,7 +167,7 @@ export default function CustomerForm() {
                 id="gender"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                 required
               >
                 <option value="">Select Gender</option>
@@ -180,7 +180,7 @@ export default function CustomerForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              className="w-full bg-blue-600 text-white py-3 md:py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-base"
             >
               {submitting ? 'Submitting...' : 'Submit'}
             </button>

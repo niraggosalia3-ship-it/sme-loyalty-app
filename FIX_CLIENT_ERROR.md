@@ -44,3 +44,4 @@ The API might be returning an error that crashes the client. Check:
 
 The `NEXT_PUBLIC_APP_URL` is still set to the old URL, or the API is failing and the error isn't being caught properly, causing a React crash.
 
+
