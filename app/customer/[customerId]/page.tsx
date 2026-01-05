@@ -83,9 +83,28 @@ export default function CustomerDashboard() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       setInstallEvent(e as BeforeInstallPromptEvent)
+      console.log('PWA install prompt event captured')
     }
 
+    // Add event listener
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    // Also check if service worker is ready (sometimes event fires after SW registration)
+    const checkServiceWorker = async () => {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready
+          console.log('Service worker ready:', registration)
+          // Event might fire after SW is ready, so we keep the listener active
+        } catch (error) {
+          console.log('Service worker not ready yet:', error)
+        }
+      }
+    }
+    checkServiceWorker()
+
+    // The event might fire with a delay, so we keep listening
+    // Some browsers fire it after user interaction or page load
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -150,20 +169,56 @@ export default function CustomerDashboard() {
           setInstallEvent(null) // Clear the event
           // Show success message
           alert('Wallet added successfully! You can now access it from your home screen.')
+        } else {
+          // User dismissed the prompt
+          console.log('User dismissed install prompt')
         }
       } catch (error) {
         console.error('Error showing install prompt:', error)
-        alert('Failed to show install prompt. Please try again.')
+        // If prompt fails, try to show instructions
+        const isAndroid = /Android/.test(navigator.userAgent)
+        if (isAndroid) {
+          alert('Install prompt failed. To add manually:\n1. Tap the menu (three dots)\n2. Select "Add to Home screen" or "Install app"\n3. Tap "Add" or "Install"')
+        } else {
+          alert('Install prompt not available. Please use your browser\'s menu to add to home screen.')
+        }
       } finally {
         setAddingToWallet(false)
       }
     } else {
-      // Fallback: Show instructions for manual install
-      const isAndroid = /Android/.test(navigator.userAgent)
-      if (isAndroid) {
-        alert('To add to home screen:\n1. Tap the menu (three dots)\n2. Select "Add to Home screen" or "Install app"\n3. Tap "Add" or "Install"')
+      // No install event - check if we can trigger it or show instructions
+      // Sometimes the event hasn't fired yet, so let's wait a bit and check again
+      setAddingToWallet(true)
+      
+      // Wait a moment for the event to potentially fire
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Check again if event is now available
+      if (installEvent) {
+        setAddingToWallet(false)
+        // Retry with the event
+        handleAddToWallet()
+        return
+      }
+      
+      setAddingToWallet(false)
+      
+      // Check if app is installable by checking for manifest and service worker
+      const hasManifest = document.querySelector('link[rel="manifest"]')
+      const hasServiceWorker = 'serviceWorker' in navigator
+      
+      if (hasManifest && hasServiceWorker) {
+        // App should be installable, but event didn't fire
+        // This can happen if user dismissed it before, or browser hasn't decided to show it yet
+        const isAndroid = /Android/.test(navigator.userAgent)
+        if (isAndroid) {
+          alert('The install prompt isn\'t available right now. This can happen if:\n- You dismissed it before\n- The browser hasn\'t determined the app is installable yet\n\nTo add manually:\n1. Tap the menu (three dots)\n2. Select "Add to Home screen" or "Install app"\n3. Tap "Add" or "Install"\n\nOr try refreshing the page and clicking again.')
+        } else {
+          alert('Install prompt not available. Please:\n1. Look for the install icon in your browser\'s address bar\n2. Or use your browser\'s menu to add to home screen\n\nYou can also try refreshing the page.')
+        }
       } else {
-        alert('To add to home screen:\n1. Look for the install icon in your browser\'s address bar\n2. Or use your browser\'s menu to add to home screen')
+        // PWA requirements not met
+        alert('PWA installation requires:\n- Valid manifest file\n- Service worker registered\n- HTTPS connection\n\nPlease ensure all requirements are met, or use your browser\'s menu to add to home screen manually.')
       }
     }
   }
