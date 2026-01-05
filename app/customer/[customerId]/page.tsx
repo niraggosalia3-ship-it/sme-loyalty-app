@@ -316,7 +316,7 @@ export default function CustomerDashboard() {
             </div>
           </div>
 
-          {/* Add to Wallet Button */}
+          {/* Save to Phone Button */}
           <div className="mt-4 md:mt-6">
             {isInstalled ? (
               <a
@@ -336,12 +336,12 @@ export default function CustomerDashboard() {
                   {addingToWallet ? (
                     <>
                       <span className="animate-spin">⏳</span>
-                      <span>Installing...</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>
-                      <span>💳</span>
-                      <span>Add to Wallet</span>
+                      <span>📱</span>
+                      <span>Save to Phone</span>
                     </>
                   )}
                 </button>
