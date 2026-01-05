@@ -78,16 +78,27 @@ export async function POST(request: NextRequest) {
         console.error('Error sending wallet pass update notification:', error)
       }
 
+      // Fetch updated customer data to ensure we return complete info
+      const updatedCustomer = await prisma.customer.findUnique({
+        where: { id: customerId },
+        select: {
+          stamps: true,
+        },
+      })
+
       return NextResponse.json({
         transaction: {
           id: transaction.id,
           customerId: transaction.customerId,
+          points: 0,
           stampsEarned: transaction.stampsEarned,
           description: transaction.description,
+          amount: null,
+          taxAmount: null,
           createdAt: transaction.createdAt,
         },
         customer: {
-          stamps: newStampsTotal,
+          stamps: updatedCustomer?.stamps ?? newStampsTotal,
         },
         availableRewards: availableRewards.map((reward) => ({
           stampsRequired: reward.stampsRequired,

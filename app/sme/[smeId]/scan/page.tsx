@@ -69,6 +69,7 @@ export default function QRScanner() {
     id: string
     customerId: string
     points: number
+    stampsEarned?: number | null
     description: string
     amount: number | null
     taxAmount: number | null
@@ -271,7 +272,16 @@ export default function QRScanner() {
       })
 
       if (res.ok) {
-        const data = await res.json()
+        let data
+        try {
+          data = await res.json()
+        } catch (jsonError) {
+          console.error('Error parsing response JSON:', jsonError)
+          alert('Transaction was successful, but there was an error displaying the response. Please refresh the page to see updated data.')
+          // Refresh customer data
+          await fetchCustomer(customer.qrCodeId || qrCodeId)
+          return
+        }
         
         // Show tier upgrade notification if applicable (points programs)
         if (data.tierUpgrade && data.tierUpgrade.upgraded) {
@@ -281,13 +291,36 @@ export default function QRScanner() {
         // Update customer data
         setCustomer({
           ...customer,
-          points: data.customer.points || customer.points,
-          stamps: data.customer.stamps || customer.stamps || 0,
-          tier: data.customer.tier || customer.tier,
+          points: data.customer?.points ?? customer.points,
+          stamps: data.customer?.stamps ?? customer.stamps ?? 0,
+          tier: data.customer?.tier ?? customer.tier,
         })
 
-        // Add new transaction to the list
-        setTransactions((prev) => [data.transaction, ...prev])
+        // Add new transaction to the list if available
+        if (data.transaction) {
+          // Convert transaction to match our Transaction interface
+          const newTransaction: Transaction = {
+            id: data.transaction.id,
+            customerId: data.transaction.customerId || customer.customerId,
+            points: data.transaction.points || 0,
+            stampsEarned: data.transaction.stampsEarned || null,
+            description: data.transaction.description || '',
+            amount: data.transaction.amount || null,
+            taxAmount: data.transaction.taxAmount || null,
+            createdAt: data.transaction.createdAt || new Date().toISOString(),
+          }
+          setTransactions((prev) => [newTransaction, ...prev])
+        } else {
+          // Refresh transactions if not in response
+          await fetchTransactions(customer.customerId)
+        }
+        
+        // Refresh customer data in the background to ensure we have the latest state
+        // Don't await - let it happen in background so UI stays responsive
+        fetchCustomer(customer.qrCodeId || qrCodeId).catch((err) => {
+          console.error('Error refreshing customer data:', err)
+          // Silently fail - we already updated the state above
+        })
 
         // Reset form
         if (isStampProgram) {
@@ -308,20 +341,37 @@ export default function QRScanner() {
               ? `\n\n🎉 Reward Available: ${data.availableRewards.map((r: any) => r.rewardName).join(', ')}`
               : ''
           alert(
-            `Stamp${stampCount > 1 ? 's' : ''} added! Customer now has ${data.customer.stamps} stamp${data.customer.stamps !== 1 ? 's' : ''}.${rewardMessage}`
+            `Stamp${stampCount > 1 ? 's' : ''} added! Customer now has ${data.customer?.stamps ?? customer.stamps ?? 0} stamp${(data.customer?.stamps ?? customer.stamps ?? 0) !== 1 ? 's' : ''}.${rewardMessage}`
           )
         } else {
           alert(
-            `Transaction added! Customer earned ${data.transaction.points} points.`
+            `Transaction added! Customer earned ${data.transaction?.points ?? 0} points.`
           )
         }
       } else {
-        const error = await res.json()
-        alert(error.error || 'Failed to add transaction')
+        // Handle error response
+        let errorMessage = 'Failed to add transaction'
+        try {
+          const error = await res.json()
+          errorMessage = error.error || error.message || errorMessage
+        } catch (jsonError) {
+          // If we can't parse the error, use status text
+          errorMessage = `Failed to add transaction (${res.status}: ${res.statusText})`
+        }
+        alert(errorMessage)
+        console.error('Transaction API error:', errorMessage)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting transaction:', error)
-      alert('Failed to add transaction')
+      // Provide more specific error messages
+      let errorMessage = 'Failed to add transaction'
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.'
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`
+      }
+      alert(errorMessage)
+      // Don't throw the error - keep the user on the page
     } finally {
       setSubmitting(false)
     }
