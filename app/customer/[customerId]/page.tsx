@@ -373,37 +373,35 @@ export default function CustomerDashboard() {
                           const hasEnoughStampsOnCurrentCard = displayStamps >= reward.stampsRequired
                           
                           // If on a new card (cycle > 1), show rewards twice:
-                          // 1. Old card version (if not redeemed in PREVIOUS cycle)
+                          // 1. Old card version (show even if redeemed - will show with strikethrough)
                           // 2. New card version (always shown)
                           if (currentCardCycle > 1) {
                             // Check if reward was redeemed in PREVIOUS cycle (not current cycle)
                             const isRedeemedInPreviousCycle = customer.previousCycleRedeemedRewardIds?.includes(reward.id) || false
                             
-                            // Old card reward: show only if NOT redeemed in previous cycle
-                            if (!isRedeemedInPreviousCycle && wasEligibleInPreviousCycle) {
+                            // Old card reward: show if eligible in previous cycle (even if redeemed)
+                            if (wasEligibleInPreviousCycle) {
                               rewardsToDisplay.push({
                                 reward,
                                 isOldCard: true,
-                                canRedeem: true, // Old card rewards are redeemable if not redeemed in previous cycle
+                                canRedeem: !isRedeemedInPreviousCycle, // Redeemable only if not redeemed
                               })
                             }
                             
-                            // New card reward: always show (grey until earned on current card)
+                            // New card reward: always show (grey until earned on current card, or strikethrough if redeemed)
                             rewardsToDisplay.push({
                               reward,
                               isOldCard: false,
                               canRedeem: hasEnoughStampsOnCurrentCard && !isRedeemedInCurrentCycle,
                             })
                           } else {
-                            // First card: show normally
-                            if (!isRedeemedInCurrentCycle) {
-                              const canRedeem = totalStamps >= reward.stampsRequired
-                              rewardsToDisplay.push({
-                                reward,
-                                isOldCard: false,
-                                canRedeem,
-                              })
-                            }
+                            // First card: show all rewards (even if redeemed)
+                            const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemedInCurrentCycle
+                            rewardsToDisplay.push({
+                              reward,
+                              isOldCard: false,
+                              canRedeem,
+                            })
                           }
                         })
                       
@@ -411,11 +409,18 @@ export default function CustomerDashboard() {
                         const { reward, isOldCard, canRedeem } = item
                         const displayStamps = customer.displayStamps ?? (customer.stamps || 0)
                         
+                        // Check if this reward is redeemed
+                        const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
+                        const isRedeemedInPreviousCycle = customer.previousCycleRedeemedRewardIds?.includes(reward.id) || false
+                        const isRedeemed = isOldCard ? isRedeemedInPreviousCycle : isRedeemedInCurrentCycle
+                        
                         return (
                           <div
                             key={`${reward.id}-${isOldCard ? 'old' : 'new'}-${index}`}
                             className={`border rounded-lg p-4 ${
-                              canRedeem
+                              isRedeemed
+                                ? 'bg-gray-100 border-gray-300'
+                                : canRedeem
                                 ? 'bg-green-50 border-green-500'
                                 : 'bg-blue-50 border-blue-200 opacity-70'
                             }`}
@@ -423,37 +428,41 @@ export default function CustomerDashboard() {
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <h4 className={`font-semibold ${
-                                  canRedeem
+                                  isRedeemed
+                                    ? 'text-gray-500 line-through'
+                                    : canRedeem
                                     ? 'text-green-900'
                                     : 'text-gray-700'
                                 }`}>
                                   {reward.rewardName}
                                 </h4>
                                 {reward.rewardDescription && (
-                                  <p className="text-sm text-gray-600 mt-1">
+                                  <p className={`text-sm mt-1 ${
+                                    isRedeemed ? 'text-gray-400 line-through' : 'text-gray-600'
+                                  }`}>
                                     {reward.rewardDescription}
                                   </p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-2">
-                                  Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
-                                  {isOldCard && (
-                                    <span className="ml-2 text-purple-600 font-medium">
-                                      (Previous Card)
-                                    </span>
-                                  )}
-                                  {!isOldCard && currentCardCycle > 1 && (
-                                    <span className="ml-2 text-blue-600 font-medium">
-                                      (New Card)
-                                    </span>
-                                  )}
-                                  {!canRedeem && !isOldCard && currentCardCycle > 1 && (
-                                    <span className="ml-2 text-orange-600">
-                                      (Need {reward.stampsRequired - displayStamps} more on current card)
-                                    </span>
-                                  )}
-                                </p>
+                                {(isOldCard || (!isOldCard && currentCardCycle > 1)) && (
+                                  <p className="text-xs text-gray-500 mt-2">
+                                    {isOldCard && (
+                                      <span className="text-purple-600 font-medium">
+                                        (Previous Card)
+                                      </span>
+                                    )}
+                                    {!isOldCard && currentCardCycle > 1 && (
+                                      <span className="text-blue-600 font-medium">
+                                        (New Card)
+                                      </span>
+                                    )}
+                                  </p>
+                                )}
                               </div>
-                              {canRedeem ? (
+                              {isRedeemed ? (
+                                <div className="ml-4 px-4 py-2 bg-gray-400 text-white rounded-lg font-medium text-sm text-center">
+                                  Redeemed
+                                </div>
+                              ) : canRedeem ? (
                                 <div className="ml-4 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium text-sm text-center">
                                   Visit store to redeem
                                 </div>
