@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
     const { name, birthDate, email, gender, linkId } = body
 
     // Validate required fields
-    if (!name || !birthDate || !email || !gender || !linkId) {
+    if (!name || !email || !linkId) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'Name and email are required' },
         { status: 400 }
       )
     }
@@ -58,13 +58,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create customer with default values
+    // birthDate and gender are optional - use defaults if not provided
     const customer = await prisma.customer.create({
       data: {
         smeId: sme.id,
         name: name.trim(),
-        birthDate: new Date(birthDate),
+        birthDate: birthDate ? new Date(birthDate) : new Date('2000-01-01'), // Default date if not provided
         email: email.trim().toLowerCase(),
-        gender,
+        gender: gender || 'Not Specified', // Default gender if not provided
         points: 0,
         tier: 'Bronze',
         qrCodeId,

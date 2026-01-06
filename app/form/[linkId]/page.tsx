@@ -48,8 +48,8 @@ export default function CustomerForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.birthDate || !formData.email || !formData.gender) {
-      alert('Please fill in all fields')
+    if (!formData.name || !formData.email) {
+      alert('Please fill in name and email')
       return
     }
 
@@ -132,20 +132,6 @@ export default function CustomerForm() {
             </div>
 
             <div>
-              <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-2">
-                Birth Date *
-              </label>
-              <input
-                type="date"
-                id="birthDate"
-                value={formData.birthDate}
-                onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                required
-              />
-            </div>
-
-            <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email ID *
               </label>
@@ -161,20 +147,35 @@ export default function CustomerForm() {
 
             <div>
               <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
-                Gender *
+                Gender <span className="text-xs text-gray-500 font-normal">(optional)</span>
               </label>
               <select
                 id="gender"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                required
               >
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-2">
+                Date of Birth <span className="text-xs text-gray-500 font-normal">(optional)</span>
+              </label>
+              <input
+                type="date"
+                id="birthDate"
+                value={formData.birthDate}
+                onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                (We may introduce birthday rewards in the future)
+              </p>
             </div>
 
             <button
