@@ -953,17 +953,19 @@ export default function QRScanner() {
                         const hasEnoughStampsTotal = totalStamps >= reward.stampsRequired
                         const hasEnoughStampsOnCurrentCard = displayStamps >= reward.stampsRequired
                         
+                        // Show ALL rewards (both old and new card versions)
+                        // Old card rewards: eligible if wasEligibleInPreviousCycle and not redeemed
+                        // New card rewards: eligible if hasEnoughStampsOnCurrentCard (for current card)
                         // Can redeem if:
                         // - Has enough total stamps AND
                         // - Not redeemed in current cycle AND
                         // - (Either was eligible in previous cycle OR has enough stamps on current card)
-                        // For new card rewards (currentCardCycle > 1 and not eligible in previous cycle):
-                        //   They should only be redeemable if earned on current card
-                        // For old card rewards (eligible in previous cycle):
-                        //   They should be redeemable if not redeemed
-                        const isNewCardReward = currentCardCycle > 1 && !wasEligibleInPreviousCycle
                         const canRedeem = hasEnoughStampsTotal && !isRedeemedInCurrentCycle && 
-                          (wasEligibleInPreviousCycle || (hasEnoughStampsOnCurrentCard && !isNewCardReward))
+                          (wasEligibleInPreviousCycle || hasEnoughStampsOnCurrentCard)
+                        
+                        // Determine if this is a "new card" reward (for display purposes)
+                        // A reward is "new" if we're on a new card (cycle > 1) and it hasn't been earned on current card yet
+                        const isNewCardReward = currentCardCycle > 1 && !hasEnoughStampsOnCurrentCard && !wasEligibleInPreviousCycle
                         
                         // Hide rewards that have been redeemed in CURRENT cycle only
                         // This ensures:
@@ -996,6 +998,11 @@ export default function QRScanner() {
                                 )}
                                 <p className="text-xs text-gray-500 mt-2">
                                   Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
+                                  {isNewCardReward && (
+                                    <span className="ml-2 text-blue-600 font-medium">
+                                      (New Card)
+                                    </span>
+                                  )}
                                   {!canRedeem && (
                                     <span className="ml-2 text-orange-600">
                                       {wasEligibleInPreviousCycle 

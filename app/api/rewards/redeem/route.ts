@@ -52,16 +52,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Reward not found' }, { status: 404 })
     }
 
-    // Check if customer has enough stamps
-    if ((customer.stamps || 0) < reward.stampsRequired) {
+    // Calculate total accumulated stamps across all cycles
+    const stampsRequired = customer.sme.stampsRequired || 10
+    const currentCardCycle = customer.cardCycleNumber || 1
+    const currentStamps = customer.stamps || 0
+    const totalStamps = stampsRequired > 0
+      ? ((currentCardCycle - 1) * stampsRequired) + currentStamps
+      : currentStamps
+
+    // Check if customer has enough TOTAL stamps (not just current card stamps)
+    if (totalStamps < reward.stampsRequired) {
       return NextResponse.json(
         { error: 'Not enough stamps to redeem this reward' },
         { status: 400 }
       )
     }
-
-    // Get current card cycle number
-    const currentCardCycle = customer.cardCycleNumber || 1
 
     // Check if already redeemed in CURRENT cycle only
     // Rewards can be redeemed once per card cycle, so they become available again on new cards
