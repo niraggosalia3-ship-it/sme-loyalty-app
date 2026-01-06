@@ -163,7 +163,7 @@ export default function StampCard({
                     width={iconSize * 0.5}
                     height={iconSize * 0.5}
                     viewBox="0 0 24 24"
-                    fill="white"
+                    fill="#FFD700"
                     className={`drop-shadow-lg ${isNewStamp ? 'animate-spin' : ''}`}
                     style={{
                       filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
