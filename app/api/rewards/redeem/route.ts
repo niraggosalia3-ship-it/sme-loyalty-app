@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if already redeemed (optional - you might want to allow multiple redemptions)
+    // Check if already redeemed
     const existingRedemption = await prisma.redeemedReward.findFirst({
       where: {
         customerId,
@@ -68,20 +68,33 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Subtract stamps (keep remainder if they had more than required)
-    const newStampsTotal = (customer.stamps || 0) - reward.stampsRequired
+    if (existingRedemption) {
+      return NextResponse.json(
+        { error: 'This reward has already been redeemed' },
+        { status: 400 }
+      )
+    }
 
-    // Update customer stamps
-    await prisma.customer.update({
-      where: { id: customerId },
-      data: { stamps: Math.max(0, newStampsTotal) },
-    })
+    // Note: We don't subtract stamps anymore - stamps remain unchanged
+    // Only the redemption status is updated
 
     // Record redemption
     await prisma.redeemedReward.create({
       data: {
         customerId,
         stampRewardId,
+      },
+    })
+
+    // Create transaction record for redemption (negative stampsEarned)
+    const transaction = await prisma.transaction.create({
+      data: {
+        customerId,
+        points: 0,
+        stampsEarned: -reward.stampsRequired, // Negative to show redemption
+        description: `Reward redeemed: ${reward.rewardName}`,
+        amount: null,
+        taxAmount: null,
       },
     })
 
@@ -92,16 +105,30 @@ export async function POST(request: NextRequest) {
       console.error('Error sending wallet pass update notification:', error)
     }
 
+    // Fetch updated customer data
+    const updatedCustomer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      select: {
+        stamps: true,
+      },
+    })
+
     return NextResponse.json({
       success: true,
       customer: {
-        stamps: Math.max(0, newStampsTotal),
+        stamps: updatedCustomer?.stamps || customer.stamps,
       },
       reward: {
         id: reward.id,
         rewardName: reward.rewardName,
         rewardDescription: reward.rewardDescription,
         stampsRequired: reward.stampsRequired,
+      },
+      transaction: {
+        id: transaction.id,
+        stampsEarned: transaction.stampsEarned,
+        description: transaction.description,
+        createdAt: transaction.createdAt,
       },
     })
   } catch (error) {

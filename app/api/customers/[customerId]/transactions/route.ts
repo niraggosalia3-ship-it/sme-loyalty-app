@@ -23,6 +23,7 @@ export async function GET(
         id: true,
         customerId: true,
         points: true,
+        stampsEarned: true,
         description: true,
         amount: true,
         taxAmount: true,

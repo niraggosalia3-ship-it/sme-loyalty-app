@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
           customerId,
           points: 0, // No points for stamp transactions
           stampsEarned: stampsToAdd,
-          description: description || `Stamp added (${stampsToAdd} stamp${stampsToAdd > 1 ? 's' : ''})`,
+          description: description || 'Stamp added',
           amount: null,
           taxAmount: null,
         },
