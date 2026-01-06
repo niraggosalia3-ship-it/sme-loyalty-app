@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyMagicToken } from './lib/magic-link'
 import { rateLimit } from './lib/rate-limit'
 
 // Rate limit configuration
@@ -86,22 +85,13 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check for magic link token in query params
+    // If present, redirect to verification API route (which handles Prisma)
     const token = request.nextUrl.searchParams.get('token')
-    let response: NextResponse | null = null
-    
     if (token) {
-      const verifiedSmeId = await verifyMagicToken(token)
-      if (verifiedSmeId === smeId) {
-        // Token is valid - create session cookie and remove token from URL
-        response = NextResponse.redirect(new URL(`/sme/${smeId}`, request.url))
-        response.cookies.set('sme_session', smeId, {
-          maxAge: 30 * 24 * 60 * 60, // 30 days
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-        })
-        return response
-      }
+      const verifyUrl = new URL('/api/auth/verify-magic-link', request.url)
+      verifyUrl.searchParams.set('token', token)
+      verifyUrl.searchParams.set('smeId', smeId)
+      return NextResponse.redirect(verifyUrl)
     }
 
     // Check for existing session cookie

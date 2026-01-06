@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
 export default function RequestAccess() {
@@ -12,6 +12,17 @@ export default function RequestAccess() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [magicLinkUrl, setMagicLinkUrl] = useState<string | null>(null)
+
+  // Check for error in URL params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const errorParam = urlParams.get('error')
+    if (errorParam === 'invalid_token') {
+      setError('The access link has expired or is invalid. Please request a new one.')
+    } else if (errorParam === 'verification_failed') {
+      setError('Failed to verify access link. Please try requesting a new one.')
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
