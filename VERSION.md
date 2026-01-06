@@ -1,5 +1,102 @@
 # Version History
 
+## Version 1.0 - January 6, 2025
+
+### Features Included:
+✅ **Low-Friction Security Implementation**
+- Magic link authentication for SMEs (no passwords required)
+- Admin token authentication (simple token-based access)
+- Rate limiting on all API endpoints (100 req/min public, 1000 req/min API key)
+- Security headers (X-Frame-Options, CSP, XSS protection, etc.)
+- Authorization checks ensuring SMEs can only access their own dashboards
+- Request access page for SMEs to get new magic links
+
+✅ **Email Integration**
+- Resend email service integration (free tier: 3,000 emails/month)
+- Beautiful HTML email templates for magic links
+- Automatic magic link generation on SME creation
+- Email fallback (link shown in console if email fails)
+
+✅ **Card Cycle System** (from v0.9)
+- Automatic card reset when all rewards are redeemed
+- Fresh rewards issued in same sequence as configured
+- Rewards unlock based on current stamp count
+- Unredeemed rewards from previous cards remain available
+
+✅ **Stamp Card Loyalty System** (from v0.9)
+- Toggle between Points & Tiers or Stamp Card during program creation
+- Configurable stamp milestones with rewards
+- Visual stamp card display with progress tracking
+- Enhanced stamp visuals: golden stars on black background with twinkle effect
+- Transaction history shows stamps instead of points for stamp programs
+
+✅ **PWA (Progressive Web App) Implementation** (from v0.8)
+- "Save to Phone" functionality for customer dashboards
+- Custom PWA icons and service worker
+- PWA icon opens directly to customer's personalized dashboard
+
+✅ **Mobile Optimization** (from v0.8)
+- Responsive UI for all high-priority pages
+- Fixed bottom navigation bar on customer dashboard
+- Card-based layout for tables on mobile
+
+✅ **Deployment Readiness** (from v0.8)
+- Vercel deployment with Supabase PostgreSQL
+- Vercel Blob Storage for file uploads
+- Production-ready error handling
+
+### Security Improvements:
+- ✅ Authentication system (magic links + admin token)
+- ✅ Authorization checks on all protected pages
+- ✅ Rate limiting to prevent abuse
+- ✅ Security headers to prevent attacks
+- ✅ Data isolation between SMEs (already implemented)
+- ✅ API key authentication for integrations
+
+### Technical Stack:
+- Next.js 14 (App Router)
+- TypeScript
+- Prisma ORM with PostgreSQL (production) and SQLite (development)
+- Tailwind CSS
+- Vercel (deployment)
+- Supabase (database)
+- Vercel Blob Storage (file uploads)
+- Resend (email service)
+- React Hooks (`useState`, `useEffect`, `useCallback`)
+- HTML5-QRCODE library
+- PWA APIs (Service Worker, `beforeinstallprompt`, `manifest.json`)
+- CSS Animations
+
+### Git Tag:
+```bash
+git checkout v1.0
+```
+
+### Commit Hash:
+`ecee9d8`
+
+### How to Revert to This Version:
+```bash
+# View this version
+git show v1.0
+
+# Checkout this version (creates detached HEAD)
+git checkout v1.0
+
+# Or create a new branch from this version
+git checkout -b restore-v1.0 v1.0
+```
+
+### Environment Variables Required:
+- `ADMIN_ACCESS_TOKEN` - Secret token for admin dashboard access
+- `RESEND_API_KEY` - API key from Resend email service
+- `RESEND_FROM_EMAIL` - Optional, email sender address
+- `DATABASE_URL` - PostgreSQL connection string (Supabase)
+- `NEXT_PUBLIC_APP_URL` - Your app URL (e.g., https://yourproject.vercel.app)
+- `BLOB_READ_WRITE_TOKEN` - Vercel Blob storage token (auto-created)
+
+---
+
 ## Version 0.9 (Current) - January 5, 2025
 
 ### Features Included:
