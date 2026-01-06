@@ -258,6 +258,15 @@ export default function SMEDashboard() {
               <p className="text-gray-600 mt-1">
                 Manage your customers and view transaction history
               </p>
+              {sme && (
+                <button
+                  onClick={() => setShowQRCode(true)}
+                  className="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-2"
+                >
+                  <span>📱</span>
+                  <span>View QR Code</span>
+                </button>
+              )}
             </div>
             <div className="flex gap-2 flex-wrap">
             <Link
