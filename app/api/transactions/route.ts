@@ -50,23 +50,23 @@ export async function POST(request: NextRequest) {
       const previousStamps = customer.stamps || 0
       const newStampsTotal = previousStamps + stampsToAdd
       
-      // Check if we need to reset card cycle
-      // Card resets when: customer completes full card (reaches stampsRequired) and gets next stamp
-      const wasFullCard = previousStamps >= stampsRequired
-      const isNowFullCard = newStampsTotal >= stampsRequired
+      // Card reset logic:
+      // - At 10/10, show 10/10 (card is complete but not reset yet)
+      // - Only reset when we EXCEED stampsRequired (11th stamp triggers reset to 1/10 on new card)
       let cardWasReset = false
       let newCardCycle = customer.cardCycleNumber || 1
       let finalStamps = newStampsTotal
 
-      // If card was already full and we're adding more stamps, OR if we just completed the card
-      if (isNowFullCard && (wasFullCard || newStampsTotal === stampsRequired)) {
-        // Check if this stamp pushes us over (new card should start)
-        if (newStampsTotal > stampsRequired) {
-          // Reset to remainder and start new card
-          finalStamps = newStampsTotal % stampsRequired
-          newCardCycle = (customer.cardCycleNumber || 1) + 1
-          cardWasReset = true
-        }
+      // Only reset when we EXCEED the required stamps (not when we reach it)
+      // At 10/10, show 10/10. At 11th stamp, reset to 1/10 on new card
+      if (newStampsTotal > stampsRequired) {
+        // Calculate how many full cards have been completed
+        const fullCardsCompleted = Math.floor(newStampsTotal / stampsRequired)
+        // Remainder goes to new card
+        finalStamps = newStampsTotal % stampsRequired
+        // Increment card cycle by number of full cards completed
+        newCardCycle = (customer.cardCycleNumber || 1) + fullCardsCompleted
+        cardWasReset = true
       }
 
       // Update customer stamps and card cycle
@@ -112,8 +112,15 @@ export async function POST(request: NextRequest) {
       })
 
       // Calculate display stamps for current card visualization
-      const displayStamps = stampsRequired > 0 ? (updatedCustomer?.stamps || finalStamps) % stampsRequired : (updatedCustomer?.stamps || finalStamps)
-      const totalStamps = newStampsTotal // Total accumulated stamps (for eligibility)
+      const currentStamps = updatedCustomer?.stamps || finalStamps
+      const currentCardCycle = updatedCustomer?.cardCycleNumber || newCardCycle
+      const displayStamps = stampsRequired > 0 ? currentStamps % stampsRequired : currentStamps
+      // Calculate total accumulated stamps across all cycles
+      // totalStamps = (cardCycleNumber - 1) * stampsRequired + currentStamps
+      // Example: Card 2, 1 stamp = (2-1)*10 + 1 = 11 total stamps
+      const totalStamps = stampsRequired > 0
+        ? ((currentCardCycle - 1) * stampsRequired) + currentStamps
+        : currentStamps
 
       return NextResponse.json({
         transaction: {
