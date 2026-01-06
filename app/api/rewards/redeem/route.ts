@@ -60,17 +60,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if already redeemed
+    // Get current card cycle number
+    const currentCardCycle = customer.cardCycleNumber || 1
+
+    // Check if already redeemed in current card cycle
     const existingRedemption = await prisma.redeemedReward.findFirst({
       where: {
         customerId,
         stampRewardId,
+        cardCycleNumber: currentCardCycle,
       },
     })
 
     if (existingRedemption) {
       return NextResponse.json(
-        { error: 'This reward has already been redeemed' },
+        { error: 'This reward has already been redeemed in the current card cycle' },
         { status: 400 }
       )
     }
@@ -78,13 +82,33 @@ export async function POST(request: NextRequest) {
     // Note: We don't subtract stamps anymore - stamps remain unchanged
     // Only the redemption status is updated
 
-    // Record redemption
+    // Record redemption with current card cycle number
     await prisma.redeemedReward.create({
       data: {
         customerId,
         stampRewardId,
+        cardCycleNumber: currentCardCycle,
       },
     })
+
+    // Check if all rewards are redeemed in the current card cycle
+    const totalRewards = customer.sme.stampRewards.length
+    const redeemedCount = await prisma.redeemedReward.count({
+      where: {
+        customerId,
+        cardCycleNumber: currentCardCycle,
+      },
+    })
+
+    // If all rewards are redeemed, start a new card cycle
+    let newCardCycle = currentCardCycle
+    if (totalRewards > 0 && redeemedCount >= totalRewards) {
+      newCardCycle = currentCardCycle + 1
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: { cardCycleNumber: newCardCycle },
+      })
+    }
 
     // Create transaction record for redemption (negative stampsEarned)
     const transaction = await prisma.transaction.create({
@@ -110,6 +134,7 @@ export async function POST(request: NextRequest) {
       where: { id: customerId },
       select: {
         stamps: true,
+        cardCycleNumber: true,
       },
     })
 
@@ -117,6 +142,7 @@ export async function POST(request: NextRequest) {
       success: true,
       customer: {
         stamps: updatedCustomer?.stamps || customer.stamps,
+        cardCycleNumber: updatedCustomer?.cardCycleNumber || newCardCycle,
       },
       reward: {
         id: reward.id,
@@ -130,6 +156,7 @@ export async function POST(request: NextRequest) {
         description: transaction.description,
         createdAt: transaction.createdAt,
       },
+      cardCycleReset: newCardCycle > currentCardCycle,
     })
   } catch (error) {
     console.error('Error redeeming reward:', error)

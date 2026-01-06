@@ -25,6 +25,7 @@ interface Customer {
   stamps?: number
   tier: string
   qrCodeId?: string
+  cardCycleNumber?: number
   sme: {
     id: string
     companyName: string

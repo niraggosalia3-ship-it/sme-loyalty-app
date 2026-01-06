@@ -83,8 +83,13 @@ export async function GET(
       })
     })
 
-    // Get redeemed reward IDs
-    const redeemedRewardIds = customer.redeemedRewards?.map((rr) => rr.stampRewardId) || []
+    // Get current card cycle number
+    const currentCardCycle = customer.cardCycleNumber || 1
+
+    // Get redeemed reward IDs for current card cycle only
+    const redeemedRewardIds = customer.redeemedRewards
+      ?.filter((rr) => rr.cardCycleNumber === currentCardCycle)
+      ?.map((rr) => rr.stampRewardId) || []
 
     return NextResponse.json({
       customerId: customer.id,
@@ -94,6 +99,7 @@ export async function GET(
       stamps: customer.stamps || 0,
       tier: customer.tier,
       qrCodeId: customer.qrCodeId,
+      cardCycleNumber: currentCardCycle,
       sme: {
         id: customer.sme.id,
         companyName: customer.sme.companyName,
@@ -110,7 +116,7 @@ export async function GET(
       },
       availableBenefits: allBenefits.filter((b) => b.status === 'available'),
       allBenefits, // Include all benefits (available and used) for display
-      redeemedRewardIds, // Include redeemed reward IDs for stamp programs
+      redeemedRewardIds, // Include redeemed reward IDs for stamp programs (current cycle only)
     })
   } catch (error) {
     console.error('Error fetching customer by QR code:', error)

@@ -42,6 +42,7 @@ interface Customer {
   tier: string
   qrCodeId: string
   lastTierUpgradeDate?: string | null
+  cardCycleNumber?: number
   sme: {
     id: string
     companyName: string

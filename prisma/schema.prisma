@@ -55,6 +55,7 @@ model Customer {
   tier                String            @default("Bronze")
   qrCodeId            String            @unique
   lastTierUpgradeDate DateTime?
+  cardCycleNumber     Int               @default(1) // Current card cycle number (for stamp programs)
   createdAt           DateTime          @default(now())
   sme                 SME               @relation(fields: [smeId], references: [id], onDelete: Cascade)
   transactions        Transaction[]
@@ -115,6 +116,7 @@ model RedeemedReward {
   id            String      @id @default(cuid())
   customerId    String
   stampRewardId String
+  cardCycleNumber Int       @default(1) // Card cycle number when this reward was redeemed
   redeemedAt    DateTime    @default(now())
   customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   stampReward   StampReward @relation(fields: [stampRewardId], references: [id], onDelete: Cascade)
