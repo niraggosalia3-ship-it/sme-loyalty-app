@@ -47,7 +47,8 @@ export default function StampCard({
 
   // Detect new stamp and trigger animation
   useEffect(() => {
-    if (currentStamps > previousStamps) {
+    // Only trigger animations if stamps actually increased (not on initial load)
+    if (previousStamps > 0 && currentStamps > previousStamps) {
       // New stamp earned!
       setNewStampIndex(currentStamps - 1)
       setTimeout(() => setNewStampIndex(null), 1000)
@@ -58,7 +59,10 @@ export default function StampCard({
         setTimeout(() => setShowCompletionCelebration(false), 5000)
       }
     }
-    setPreviousStamps(currentStamps)
+    // Always update previous stamps to track changes
+    if (currentStamps !== previousStamps) {
+      setPreviousStamps(currentStamps)
+    }
   }, [currentStamps, previousStamps, totalStamps])
 
   const isComplete = currentStamps >= totalStamps
@@ -142,7 +146,7 @@ export default function StampCard({
                   width: `${iconSize}px`,
                   height: `${iconSize}px`,
                   backgroundColor: isFilled ? '#000000' : 'transparent',
-                  background: isFilled ? undefined : undefined,
+                  background: isFilled ? '#000000' : 'transparent',
                   borderColor: isFilled
                     ? '#000000'
                     : '#D1D5DB',
