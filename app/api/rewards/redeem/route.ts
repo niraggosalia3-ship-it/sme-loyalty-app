@@ -63,18 +63,19 @@ export async function POST(request: NextRequest) {
     // Get current card cycle number
     const currentCardCycle = customer.cardCycleNumber || 1
 
-    // Check if already redeemed in ANY cycle (rewards can only be redeemed once across all cycles)
+    // Check if already redeemed in CURRENT cycle only
+    // Rewards can be redeemed once per card cycle, so they become available again on new cards
     const existingRedemption = await prisma.redeemedReward.findFirst({
       where: {
         customerId,
         stampRewardId,
-        // Don't filter by cardCycleNumber - check all cycles
+        cardCycleNumber: currentCardCycle, // Only check current cycle
       },
     })
 
     if (existingRedemption) {
       return NextResponse.json(
-        { error: 'This reward has already been redeemed' },
+        { error: 'This reward has already been redeemed in the current card cycle' },
         { status: 400 }
       )
     }

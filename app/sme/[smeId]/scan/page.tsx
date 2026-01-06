@@ -933,19 +933,21 @@ export default function QRScanner() {
                   <div className="space-y-3">
                     {customer.sme.stampRewards
                       .map((reward) => {
-                        // Check if reward has been redeemed in ANY cycle (rewards can only be redeemed once)
-                        const isRedeemedInAnyCycle = customer.allRedeemedRewardIds?.includes(reward.id) || false
+                        // Check if reward has been redeemed in CURRENT cycle only
+                        // Rewards can be redeemed once per card cycle, so they become available again on new cards
+                        const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
                         // Use totalStamps for eligibility (total accumulated across all cycles)
                         const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
-                        // Can redeem if: has enough stamps AND not redeemed in any cycle
-                        const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemedInAnyCycle
+                        // Can redeem if: has enough stamps AND not redeemed in current cycle
+                        const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemedInCurrentCycle
                         
-                        // Hide rewards that have been redeemed in ANY cycle (they can only be redeemed once)
+                        // Hide rewards that have been redeemed in CURRENT cycle only
                         // This ensures:
-                        // - Rewards redeemed in previous cycles stay hidden
-                        // - Fresh rewards for new card are visible (not yet redeemed)
-                        // - Unredeemed rewards from previous cycles are visible (green if eligible)
-                        if (isRedeemedInAnyCycle) {
+                        // - Rewards redeemed in current cycle are hidden
+                        // - Fresh rewards for new card are visible (not yet redeemed in current cycle)
+                        // - Unredeemed rewards from previous cycles are visible (not redeemed in current cycle)
+                        // - Rewards redeemed in previous cycles become available again on new cards
+                        if (isRedeemedInCurrentCycle) {
                           return null
                         }
                         
