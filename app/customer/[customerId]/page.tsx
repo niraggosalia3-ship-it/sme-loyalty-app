@@ -366,51 +366,9 @@ export default function CustomerDashboard() {
                                 {reward.stampsRequired !== 1 ? 's' : ''}
                               </p>
                             </div>
-                            <button
-                              onClick={async () => {
-                                if (
-                                  !confirm(
-                                    `Redeem reward: ${reward.rewardName}? This will use ${reward.stampsRequired} stamp${reward.stampsRequired !== 1 ? 's' : ''}.`
-                                  )
-                                ) {
-                                  return
-                                }
-
-                                try {
-                                  const res = await fetch('/api/rewards/redeem', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      customerId: customer.id,
-                                      stampRewardId: reward.id,
-                                      smeId: customer.sme.id,
-                                    }),
-                                  })
-
-                                  if (res.ok) {
-                                    const data = await res.json()
-                                    setCustomer({
-                                      ...customer,
-                                      stamps: data.customer.stamps,
-                                    })
-                                    alert(
-                                      `Reward redeemed! You now have ${data.customer.stamps} stamp${data.customer.stamps !== 1 ? 's' : ''} remaining.`
-                                    )
-                                    // Refresh customer data
-                                    fetchCustomerData()
-                                  } else {
-                                    const error = await res.json()
-                                    alert(error.error || 'Failed to redeem reward')
-                                  }
-                                } catch (error) {
-                                  console.error('Error redeeming reward:', error)
-                                  alert('Failed to redeem reward')
-                                }
-                              }}
-                              className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm"
-                            >
-                              Redeem
-                            </button>
+                            <div className="ml-4 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium text-sm text-center">
+                              Visit store to redeem
+                            </div>
                           </div>
                         </div>
                       ))}

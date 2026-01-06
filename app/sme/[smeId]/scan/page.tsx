@@ -32,9 +32,16 @@ interface Customer {
     stampsRequired?: number | null
     primaryColor?: string | null
     secondaryColor?: string | null
+    stampRewards?: Array<{
+      id: string
+      stampsRequired: number
+      rewardName: string
+      rewardDescription?: string | null
+    }>
   }
   availableBenefits: Benefit[]
   allBenefits?: Benefit[]
+  redeemedRewardIds?: string[]
 }
 
 interface TierUpgrade {
@@ -901,11 +908,126 @@ export default function QRScanner() {
                 </div>
               )}
 
-              {(!customer.allBenefits || customer.allBenefits.length === 0) && (
+              {(!customer.allBenefits || customer.allBenefits.length === 0) && customer.sme.loyaltyType !== 'stamps' && (
                 <div className="mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <p className="text-gray-500 text-center">
                     No benefits available at this time
                   </p>
+                </div>
+              )}
+
+              {/* Stamp Rewards Section (for stamp programs) */}
+              {customer.sme.loyaltyType === 'stamps' && customer.sme.stampRewards && customer.sme.stampRewards.length > 0 && (
+                <div className="mb-6 border border-gray-200 rounded-lg p-4 bg-white">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Available Stamp Rewards
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Customer has {customer.stamps || 0} stamp{customer.stamps !== 1 ? 's' : ''}. Rewards they can redeem:
+                  </p>
+                  
+                  <div className="space-y-3">
+                    {customer.sme.stampRewards
+                      .map((reward) => {
+                        // Check if reward has been redeemed
+                        const isRedeemed = customer.redeemedRewardIds?.includes(reward.id) || false
+                        const canRedeem = (customer.stamps || 0) >= reward.stampsRequired && !isRedeemed
+                        
+                        return (
+                          <div
+                            key={reward.id}
+                            className={`border rounded-lg p-4 ${
+                              isRedeemed
+                                ? 'bg-gray-100 border-gray-300'
+                                : canRedeem
+                                  ? 'bg-green-50 border-green-200'
+                                  : 'bg-blue-50 border-blue-200 opacity-70'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className={`font-semibold ${
+                                  isRedeemed ? 'text-gray-500 line-through' : 'text-gray-900'
+                                }`}>
+                                  {reward.rewardName}
+                                </h4>
+                                {reward.rewardDescription && (
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {reward.rewardDescription}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
+                                  {!canRedeem && !isRedeemed && (
+                                    <span className="ml-2 text-orange-600">
+                                      (Need {reward.stampsRequired - (customer.stamps || 0)} more)
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              {canRedeem && (
+                                <button
+                                  onClick={async () => {
+                                    if (
+                                      !confirm(
+                                        `Redeem reward: ${reward.rewardName}? This will use ${reward.stampsRequired} stamp${reward.stampsRequired !== 1 ? 's' : ''}.`
+                                      )
+                                    ) {
+                                      return
+                                    }
+
+                                    try {
+                                      const res = await fetch('/api/rewards/redeem', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          customerId: customer.customerId,
+                                          stampRewardId: reward.id,
+                                          smeId: customer.sme.id,
+                                        }),
+                                      })
+
+                                      if (res.ok) {
+                                        const data = await res.json()
+                                        alert(
+                                          `Reward redeemed! Customer now has ${data.customer.stamps} stamp${data.customer.stamps !== 1 ? 's' : ''} remaining.`
+                                        )
+                                        // Refresh customer data to update redeemed status
+                                        await fetchCustomer(customer.qrCodeId || qrCodeId)
+                                      } else {
+                                        const error = await res.json()
+                                        alert(error.error || 'Failed to redeem reward')
+                                      }
+                                    } catch (error) {
+                                      console.error('Error redeeming reward:', error)
+                                      alert('Failed to redeem reward')
+                                    }
+                                  }}
+                                  className="ml-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm whitespace-nowrap"
+                                >
+                                  Redeem
+                                </button>
+                              )}
+                              {isRedeemed && (
+                                <span className="ml-4 px-3 py-2 bg-gray-200 text-gray-600 text-xs font-semibold rounded whitespace-nowrap">
+                                  Redeemed
+                                </span>
+                              )}
+                              {!canRedeem && !isRedeemed && (
+                                <span className="ml-4 px-3 py-2 bg-gray-300 text-gray-500 text-xs font-semibold rounded whitespace-nowrap">
+                                  Not Available
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {customer.sme.stampRewards.length === 0 && (
+                      <p className="text-sm text-gray-600 text-center py-4">
+                        No rewards configured for this program.
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 

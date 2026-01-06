@@ -29,10 +29,18 @@ export async function GET(
             tiers: {
               orderBy: { order: 'asc' },
             },
+            stampRewards: {
+              orderBy: { stampsRequired: 'asc' },
+            },
           },
         },
         customerBenefits: {
           orderBy: { unlockedAt: 'desc' },
+        },
+        redeemedRewards: {
+          include: {
+            stampReward: true,
+          },
         },
       },
     })
@@ -75,6 +83,9 @@ export async function GET(
       })
     })
 
+    // Get redeemed reward IDs
+    const redeemedRewardIds = customer.redeemedRewards?.map((rr) => rr.stampRewardId) || []
+
     return NextResponse.json({
       customerId: customer.id,
       name: customer.name,
@@ -90,9 +101,16 @@ export async function GET(
         stampsRequired: customer.sme.stampsRequired || null,
         primaryColor: customer.sme.primaryColor || null,
         secondaryColor: customer.sme.secondaryColor || null,
+        stampRewards: customer.sme.stampRewards?.map((reward) => ({
+          id: reward.id,
+          stampsRequired: reward.stampsRequired,
+          rewardName: reward.rewardName,
+          rewardDescription: reward.rewardDescription,
+        })) || [],
       },
       availableBenefits: allBenefits.filter((b) => b.status === 'available'),
       allBenefits, // Include all benefits (available and used) for display
+      redeemedRewardIds, // Include redeemed reward IDs for stamp programs
     })
   } catch (error) {
     console.error('Error fetching customer by QR code:', error)
