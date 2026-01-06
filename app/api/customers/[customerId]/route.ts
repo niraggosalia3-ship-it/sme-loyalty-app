@@ -114,7 +114,11 @@ export async function GET(
 
     // Calculate display stamps for current card visualization
     const stampsRequired = customer.sme.stampsRequired || 10
-    const displayStamps = stampsRequired > 0 ? (customer.stamps || 0) % stampsRequired : (customer.stamps || 0)
+    // When customer.stamps === stampsRequired, show stampsRequired (complete card: 10/10)
+    // Otherwise, show remainder for new cards (1/10, 2/10, etc.)
+    const displayStamps = stampsRequired > 0
+      ? ((customer.stamps || 0) === stampsRequired ? stampsRequired : (customer.stamps || 0) % stampsRequired)
+      : (customer.stamps || 0)
     // Calculate total accumulated stamps across all cycles
     // totalStamps = (cardCycleNumber - 1) * stampsRequired + currentStamps
     // Example: Card 2, 1 stamp = (2-1)*10 + 1 = 11 total stamps

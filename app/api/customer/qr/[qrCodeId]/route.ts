@@ -107,7 +107,11 @@ export async function GET(
 
     // Calculate display stamps for current card visualization
     const stampsRequired = customer.sme.stampsRequired || 10
-    const displayStamps = stampsRequired > 0 ? (customer.stamps || 0) % stampsRequired : (customer.stamps || 0)
+    // When customer.stamps === stampsRequired, show stampsRequired (complete card: 10/10)
+    // Otherwise, show remainder for new cards (1/10, 2/10, etc.)
+    const displayStamps = stampsRequired > 0
+      ? ((customer.stamps || 0) === stampsRequired ? stampsRequired : (customer.stamps || 0) % stampsRequired)
+      : (customer.stamps || 0)
     // Calculate total accumulated stamps across all cycles
     // totalStamps = (cardCycleNumber - 1) * stampsRequired + currentStamps
     // Example: Card 2, 1 stamp = (2-1)*10 + 1 = 11 total stamps
@@ -142,8 +146,10 @@ export async function GET(
       allBenefits, // Include all benefits (available and used) for display
       redeemedRewardIds, // Include redeemed reward IDs for stamp programs (current cycle only - for display filtering)
       allRedeemedRewardIds, // All redeemed rewards (any cycle - for eligibility check)
-      displayStamps, // Stamps for current card visualization (0 to stampsRequired-1)
-      totalStamps: customer.stamps || 0, // Total accumulated stamps (for eligibility)
+      displayStamps, // Stamps for current card visualization (0 to stampsRequired)
+      totalStamps: stampsRequired > 0
+        ? ((currentCardCycle - 1) * stampsRequired) + (customer.stamps || 0)
+        : (customer.stamps || 0), // Total accumulated stamps across all cycles (for eligibility)
     })
   } catch (error) {
     console.error('Error fetching customer by QR code:', error)
