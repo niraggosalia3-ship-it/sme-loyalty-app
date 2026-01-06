@@ -57,6 +57,7 @@ interface Customer {
   tierBenefits: TierBenefits[]
   tierUpgrade?: TierUpgrade | null
   redeemedRewardIds?: string[] // Current cycle only - for display filtering
+  previousCycleRedeemedRewardIds?: string[] // Previous cycle redemptions - to hide old card rewards that were redeemed
   allRedeemedRewardIds?: string[] // All cycles - for eligibility check
   displayStamps?: number // Stamps for current card visualization
   totalStamps?: number // Total accumulated stamps (for eligibility)
@@ -372,15 +373,18 @@ export default function CustomerDashboard() {
                           const hasEnoughStampsOnCurrentCard = displayStamps >= reward.stampsRequired
                           
                           // If on a new card (cycle > 1), show rewards twice:
-                          // 1. Old card version (if not redeemed in current cycle)
+                          // 1. Old card version (if not redeemed in PREVIOUS cycle)
                           // 2. New card version (always shown)
                           if (currentCardCycle > 1) {
-                            // Old card reward: show if not redeemed in current cycle
-                            if (!isRedeemedInCurrentCycle && wasEligibleInPreviousCycle) {
+                            // Check if reward was redeemed in PREVIOUS cycle (not current cycle)
+                            const isRedeemedInPreviousCycle = customer.previousCycleRedeemedRewardIds?.includes(reward.id) || false
+                            
+                            // Old card reward: show only if NOT redeemed in previous cycle
+                            if (!isRedeemedInPreviousCycle && wasEligibleInPreviousCycle) {
                               rewardsToDisplay.push({
                                 reward,
                                 isOldCard: true,
-                                canRedeem: true, // Old card rewards are redeemable if not redeemed
+                                canRedeem: true, // Old card rewards are redeemable if not redeemed in previous cycle
                               })
                             }
                             
