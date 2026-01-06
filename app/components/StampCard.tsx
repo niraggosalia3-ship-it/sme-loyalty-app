@@ -135,42 +135,61 @@ export default function StampCard({
 
               {/* Stamp Circle */}
               <div
-                className={`rounded-full border-2 flex items-center justify-center transition-all duration-500 ${
+                className={`rounded-full border-2 flex items-center justify-center transition-all duration-500 relative overflow-hidden ${
                   isNewStamp ? 'animate-pulse scale-110' : ''
                 } ${isCompleteStamp ? 'ring-4 ring-yellow-400 ring-opacity-75' : ''}`}
                 style={{
                   width: `${iconSize}px`,
                   height: `${iconSize}px`,
-                  backgroundColor: isFilled ? undefined : 'transparent',
-                  background: isFilled ? filledGradient : undefined,
+                  backgroundColor: isFilled ? '#000000' : 'transparent',
+                  background: isFilled ? undefined : undefined,
                   borderColor: isFilled
-                    ? primaryColor || '#3B82F6'
+                    ? '#000000'
                     : '#D1D5DB',
                   borderStyle: isFilled ? 'solid' : 'dashed',
                   borderWidth: isFilled ? '3px' : '2px',
                   boxShadow: isFilled
                     ? isCompleteStamp
-                      ? `0 4px 20px ${primaryColor}80, 0 0 0 4px rgba(251, 191, 36, 0.3)`
-                      : `0 2px 12px ${primaryColor}60`
+                      ? `0 4px 20px rgba(255, 215, 0, 0.5), 0 0 0 4px rgba(251, 191, 36, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1)`
+                      : `0 2px 12px rgba(255, 215, 0, 0.3), inset 0 0 15px rgba(255, 215, 0, 0.1)`
                     : 'none',
                   transform: isNewStamp ? 'scale(1.2)' : isCompleteStamp ? 'scale(1.1)' : 'scale(1)',
                   transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
                 }}
               >
-                {/* Star Icon with Animation */}
+                {/* Star Icon with Golden Shine and Twinkle */}
                 {isFilled ? (
-                  <svg
-                    width={iconSize * 0.5}
-                    height={iconSize * 0.5}
-                    viewBox="0 0 24 24"
-                    fill="#FFD700"
-                    className={`drop-shadow-lg ${isNewStamp ? 'animate-spin' : ''}`}
-                    style={{
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                    }}
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
+                  <div className="relative" style={{ width: `${iconSize * 0.5}px`, height: `${iconSize * 0.5}px` }}>
+                    {/* Twinkle shine effect - diagonal sweep */}
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.6) 50%, transparent 60%)',
+                        animation: 'shimmer 3s infinite',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <svg
+                      width={iconSize * 0.5}
+                      height={iconSize * 0.5}
+                      viewBox="0 0 24 24"
+                      fill={`url(#goldGradient-${index})`}
+                      className={`drop-shadow-lg relative z-10 ${isNewStamp ? 'animate-spin' : ''}`}
+                      style={{
+                        filter: 'drop-shadow(0 2px 6px rgba(255, 215, 0, 0.8))',
+                      }}
+                    >
+                      <defs>
+                        <linearGradient id={`goldGradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#FFD700" stopOpacity="1" />
+                          <stop offset="30%" stopColor="#FFA500" stopOpacity="1" />
+                          <stop offset="60%" stopColor="#FFD700" stopOpacity="1" />
+                          <stop offset="100%" stopColor="#FFA500" stopOpacity="1" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </div>
                 ) : (
                   <svg
                     width={iconSize * 0.4}
