@@ -931,55 +931,67 @@ export default function QRScanner() {
                   </p>
                   
                   <div className="space-y-3">
-                    {customer.sme.stampRewards
-                      .map((reward) => {
-                        // Check if reward has been redeemed in CURRENT cycle only
-                        // Rewards can be redeemed once per card cycle, so they become available again on new cards
-                        const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
-                        // Use totalStamps for eligibility (total accumulated across all cycles)
-                        const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
+                    {(() => {
+                      const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
+                      const displayStamps = customer.displayStamps ?? (customer.stamps || 0)
+                      const stampsRequired = customer.sme.stampsRequired || 10
+                      const currentCardCycle = customer.cardCycleNumber || 1
+                      const stampsFromPreviousCycles = totalStamps - displayStamps
+                      
+                      // Build array of rewards to display
+                      const rewardsToDisplay: Array<{
+                        reward: typeof customer.sme.stampRewards[0]
+                        isOldCard: boolean
+                        canRedeem: boolean
+                      }> = []
+                      
+                      customer.sme.stampRewards
+                        .sort((a, b) => a.stampsRequired - b.stampsRequired)
+                        .forEach((reward) => {
+                          const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
+                          const wasEligibleInPreviousCycle = stampsFromPreviousCycles >= reward.stampsRequired
+                          const hasEnoughStampsOnCurrentCard = displayStamps >= reward.stampsRequired
+                          
+                          // If on a new card (cycle > 1), show rewards twice:
+                          // 1. Old card version (if not redeemed in current cycle)
+                          // 2. New card version (always shown)
+                          if (currentCardCycle > 1) {
+                            // Old card reward: show if not redeemed in current cycle
+                            if (!isRedeemedInCurrentCycle && wasEligibleInPreviousCycle) {
+                              rewardsToDisplay.push({
+                                reward,
+                                isOldCard: true,
+                                canRedeem: true, // Old card rewards are redeemable if not redeemed
+                              })
+                            }
+                            
+                            // New card reward: always show (grey until earned on current card)
+                            rewardsToDisplay.push({
+                              reward,
+                              isOldCard: false,
+                              canRedeem: hasEnoughStampsOnCurrentCard && !isRedeemedInCurrentCycle,
+                            })
+                          } else {
+                            // First card: show normally
+                            if (!isRedeemedInCurrentCycle) {
+                              const canRedeem = totalStamps >= reward.stampsRequired
+                              rewardsToDisplay.push({
+                                reward,
+                                isOldCard: false,
+                                canRedeem,
+                              })
+                            }
+                          }
+                        })
+                      
+                      return rewardsToDisplay.map((item, index) => {
+                        const { reward, isOldCard, canRedeem } = item
                         const displayStamps = customer.displayStamps ?? (customer.stamps || 0)
-                        const stampsRequired = customer.sme.stampsRequired || 10
                         const currentCardCycle = customer.cardCycleNumber || 1
-                        
-                        // Check if this reward was already available in a previous cycle
-                        // A reward is "old" if it was eligible in a previous cycle
-                        // A reward is "new" if it's only eligible on the current card
-                        const stampsFromPreviousCycles = totalStamps - displayStamps
-                        const wasEligibleInPreviousCycle = stampsFromPreviousCycles >= reward.stampsRequired
-                        
-                        // For new card rewards: they should be grey until earned on the CURRENT card
-                        // For old card rewards: they should be green if not redeemed
-                        const hasEnoughStampsTotal = totalStamps >= reward.stampsRequired
-                        const hasEnoughStampsOnCurrentCard = displayStamps >= reward.stampsRequired
-                        
-                        // Show ALL rewards (both old and new card versions)
-                        // Old card rewards: eligible if wasEligibleInPreviousCycle and not redeemed
-                        // New card rewards: eligible if hasEnoughStampsOnCurrentCard (for current card)
-                        // Can redeem if:
-                        // - Has enough total stamps AND
-                        // - Not redeemed in current cycle AND
-                        // - (Either was eligible in previous cycle OR has enough stamps on current card)
-                        const canRedeem = hasEnoughStampsTotal && !isRedeemedInCurrentCycle && 
-                          (wasEligibleInPreviousCycle || hasEnoughStampsOnCurrentCard)
-                        
-                        // Determine if this is a "new card" reward (for display purposes)
-                        // A reward is "new" if we're on a new card (cycle > 1) and it hasn't been earned on current card yet
-                        const isNewCardReward = currentCardCycle > 1 && !hasEnoughStampsOnCurrentCard && !wasEligibleInPreviousCycle
-                        
-                        // Hide rewards that have been redeemed in CURRENT cycle only
-                        // This ensures:
-                        // - Rewards redeemed in current cycle are hidden
-                        // - Fresh rewards for new card are visible (not yet redeemed in current cycle)
-                        // - Unredeemed rewards from previous cycles are visible (not redeemed in current cycle)
-                        // - Rewards redeemed in previous cycles become available again on new cards
-                        if (isRedeemedInCurrentCycle) {
-                          return null
-                        }
                         
                         return (
                           <div
-                            key={reward.id}
+                            key={`${reward.id}-${isOldCard ? 'old' : 'new'}-${index}`}
                             className={`border rounded-lg p-4 ${
                               canRedeem
                                 ? 'bg-green-50 border-green-200'
@@ -998,17 +1010,19 @@ export default function QRScanner() {
                                 )}
                                 <p className="text-xs text-gray-500 mt-2">
                                   Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
-                                  {isNewCardReward && (
+                                  {isOldCard && (
+                                    <span className="ml-2 text-purple-600 font-medium">
+                                      (Previous Card)
+                                    </span>
+                                  )}
+                                  {!isOldCard && currentCardCycle > 1 && (
                                     <span className="ml-2 text-blue-600 font-medium">
                                       (New Card)
                                     </span>
                                   )}
-                                  {!canRedeem && (
+                                  {!canRedeem && !isOldCard && currentCardCycle > 1 && (
                                     <span className="ml-2 text-orange-600">
-                                      {wasEligibleInPreviousCycle 
-                                        ? `(Redeem from previous card)`
-                                        : `(Need ${reward.stampsRequired - displayStamps} more on current card)`
-                                      }
+                                      (Need {reward.stampsRequired - displayStamps} more on current card)
                                     </span>
                                   )}
                                 </p>
@@ -1064,7 +1078,8 @@ export default function QRScanner() {
                             </div>
                           </div>
                         )
-                      })}
+                      })
+                    })()}
                     {customer.sme.stampRewards.length === 0 && (
                       <p className="text-sm text-gray-600 text-center py-4">
                         No rewards configured for this program.
