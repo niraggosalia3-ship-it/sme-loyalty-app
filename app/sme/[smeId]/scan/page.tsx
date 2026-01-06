@@ -976,8 +976,9 @@ export default function QRScanner() {
                               canRedeem: hasEnoughStampsOnCurrentCard && !isRedeemedInCurrentCycle,
                             })
                           } else {
-                            // First card: show all rewards (even if redeemed)
+                            // First card: show all rewards (even if redeemed - will show with strikethrough)
                             const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemedInCurrentCycle
+                            // Always show rewards, even if redeemed
                             rewardsToDisplay.push({
                               reward,
                               isOldCard: false,

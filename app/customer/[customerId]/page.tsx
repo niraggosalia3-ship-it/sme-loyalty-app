@@ -395,7 +395,7 @@ export default function CustomerDashboard() {
                               canRedeem: hasEnoughStampsOnCurrentCard && !isRedeemedInCurrentCycle,
                             })
                           } else {
-                            // First card: show all rewards (even if redeemed)
+                            // First card: show all rewards (even if redeemed - will show with strikethrough)
                             const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemedInCurrentCycle
                             rewardsToDisplay.push({
                               reward,
