@@ -337,52 +337,74 @@ export default function CustomerDashboard() {
                 redeemedRewardIds={customer.redeemedRewardIds || []}
               />
               
-              {/* Available Rewards */}
+              {/* Stamp Rewards */}
               {customer.sme.stampRewards && customer.sme.stampRewards.length > 0 && (
                 <div className="mt-6">
                   <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3">
-                    Available Rewards
+                    Stamp Rewards
                   </h3>
                   <div className="space-y-3">
                     {customer.sme.stampRewards
-                      .filter(
-                        (reward) =>
-                          (customer.stamps || 0) >= reward.stampsRequired
-                      )
-                      .map((reward) => (
-                        <div
-                          key={reward.id}
-                          className="bg-green-50 border-2 border-green-500 rounded-lg p-4"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-green-900">
-                                {reward.rewardName}
-                              </h4>
-                              {reward.rewardDescription && (
-                                <p className="text-sm text-green-800 mt-1">
-                                  {reward.rewardDescription}
+                      .sort((a, b) => a.stampsRequired - b.stampsRequired)
+                      .map((reward) => {
+                        // Check if reward has been redeemed
+                        const isRedeemed = customer.redeemedRewardIds?.includes(reward.id) || false
+                        const hasEnoughStamps = (customer.stamps || 0) >= reward.stampsRequired
+                        const canRedeem = hasEnoughStamps && !isRedeemed
+                        
+                        return (
+                          <div
+                            key={reward.id}
+                            className={`border rounded-lg p-4 ${
+                              isRedeemed
+                                ? 'bg-gray-100 border-gray-300'
+                                : canRedeem
+                                  ? 'bg-green-50 border-green-500'
+                                  : 'bg-blue-50 border-blue-200 opacity-70'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className={`font-semibold ${
+                                  isRedeemed 
+                                    ? 'text-gray-500 line-through' 
+                                    : canRedeem
+                                      ? 'text-green-900'
+                                      : 'text-gray-700'
+                                }`}>
+                                  {reward.rewardName}
+                                </h4>
+                                {reward.rewardDescription && (
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {reward.rewardDescription}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
+                                  {!canRedeem && !isRedeemed && (
+                                    <span className="ml-2 text-orange-600">
+                                      (Need {reward.stampsRequired - (customer.stamps || 0)} more)
+                                    </span>
+                                  )}
                                 </p>
+                              </div>
+                              {isRedeemed ? (
+                                <div className="ml-4 px-3 py-2 bg-gray-200 text-gray-600 text-xs font-semibold rounded whitespace-nowrap">
+                                  Redeemed
+                                </div>
+                              ) : canRedeem ? (
+                                <div className="ml-4 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium text-sm text-center">
+                                  Visit store to redeem
+                                </div>
+                              ) : (
+                                <div className="ml-4 px-3 py-2 bg-gray-300 text-gray-500 text-xs font-semibold rounded whitespace-nowrap">
+                                  Not Available
+                                </div>
                               )}
-                              <p className="text-xs text-green-700 mt-2">
-                                Requires {reward.stampsRequired} stamp
-                                {reward.stampsRequired !== 1 ? 's' : ''}
-                              </p>
-                            </div>
-                            <div className="ml-4 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium text-sm text-center">
-                              Visit store to redeem
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    {customer.sme.stampRewards.filter(
-                      (reward) =>
-                        (customer.stamps || 0) >= reward.stampsRequired
-                    ).length === 0 && (
-                      <p className="text-sm text-gray-600 text-center py-4">
-                        Keep collecting stamps to unlock rewards!
-                      </p>
-                    )}
+                        )
+                      })}
                   </div>
                 </div>
               )}
