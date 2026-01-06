@@ -22,6 +22,11 @@ export async function GET(
         customerBenefits: {
           orderBy: { unlockedAt: 'desc' },
         },
+        redeemedRewards: {
+          include: {
+            stampReward: true,
+          },
+        },
       },
     })
 
@@ -85,6 +90,9 @@ export async function GET(
       }
     }
 
+    // Get redeemed reward IDs for stamp programs
+    const redeemedRewardIds = customer.redeemedRewards?.map((rr) => rr.stampRewardId) || []
+
     return NextResponse.json({
       id: customer.id,
       name: customer.name,
@@ -107,6 +115,7 @@ export async function GET(
       },
       tierBenefits,
       tierUpgrade: tierUpgradeInfo,
+      redeemedRewardIds, // Include for stamp programs
     })
   } catch (error) {
     console.error('Error fetching customer:', error)

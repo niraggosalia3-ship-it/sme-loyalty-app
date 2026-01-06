@@ -55,6 +55,7 @@ interface Customer {
   }
   tierBenefits: TierBenefits[]
   tierUpgrade?: TierUpgrade | null
+  redeemedRewardIds?: string[]
 }
 
 interface Transaction {
@@ -332,6 +333,8 @@ export default function CustomerDashboard() {
                 primaryColor={customer.sme.primaryColor}
                 secondaryColor={customer.sme.secondaryColor}
                 size="large"
+                rewards={customer.sme.stampRewards || []}
+                redeemedRewardIds={customer.redeemedRewardIds || []}
               />
               
               {/* Available Rewards */}
