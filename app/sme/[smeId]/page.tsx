@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import QRCode from 'react-qr-code'
 
 interface Customer {
   id: string
@@ -49,6 +50,7 @@ export default function SMEDashboard() {
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [apiKeyVisible, setApiKeyVisible] = useState(false)
   const [generatingApiKey, setGeneratingApiKey] = useState(false)
+  const [showQRCode, setShowQRCode] = useState(false)
 
   useEffect(() => {
     fetchSME()
@@ -615,8 +617,61 @@ export default function SMEDashboard() {
             </div>
           )}
         </div>
+        </div>
       </div>
-      </div>
+
+      {/* QR Code Modal */}
+      {showQRCode && sme && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Your Program QR Code</h2>
+              <button
+                onClick={() => setShowQRCode(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600 mb-3">
+                Share this QR code with your customers to join your loyalty program
+              </p>
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-200 inline-block">
+                <QRCode
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/form/${sme.uniqueLinkId}`}
+                  size={200}
+                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  viewBox={`0 0 200 200`}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-3 font-mono break-all">
+                {typeof window !== 'undefined' ? window.location.origin : ''}/form/{sme.uniqueLinkId}
+              </p>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/form/${sme.uniqueLinkId}`
+                  navigator.clipboard.writeText(link)
+                  alert('Link copied to clipboard!')
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Copy Link
+              </button>
+              <button
+                onClick={() => setShowQRCode(false)}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
