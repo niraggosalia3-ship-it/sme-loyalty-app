@@ -86,10 +86,17 @@ export async function GET(
     // Get current card cycle number
     const currentCardCycle = customer.cardCycleNumber || 1
 
-    // Get redeemed reward IDs for current card cycle only
-    const redeemedRewardIds = customer.redeemedRewards
-      ?.filter((rr) => rr.cardCycleNumber === currentCardCycle)
-      ?.map((rr) => rr.stampRewardId) || []
+    // Get ALL redeemed reward IDs (from any cycle) - rewards can only be redeemed once
+    const allRedeemedRewards = await prisma.redeemedReward.findMany({
+      where: { customerId: customer.id },
+      select: { stampRewardId: true },
+    })
+    const redeemedRewardIds = Array.from(new Set(allRedeemedRewards.map(r => r.stampRewardId)))
+
+    // Calculate display stamps for current card visualization
+    const stampsRequired = customer.sme.stampsRequired || 10
+    const displayStamps = stampsRequired > 0 ? (customer.stamps || 0) % stampsRequired : (customer.stamps || 0)
+    const totalStamps = customer.stamps || 0 // Total accumulated stamps (for eligibility)
 
     return NextResponse.json({
       customerId: customer.id,

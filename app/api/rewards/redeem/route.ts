@@ -63,24 +63,25 @@ export async function POST(request: NextRequest) {
     // Get current card cycle number
     const currentCardCycle = customer.cardCycleNumber || 1
 
-    // Check if already redeemed in current card cycle
+    // Check if already redeemed in ANY cycle (rewards can only be redeemed once)
     const existingRedemption = await prisma.redeemedReward.findFirst({
       where: {
         customerId,
         stampRewardId,
-        cardCycleNumber: currentCardCycle,
+        // Don't filter by cardCycleNumber - check all cycles
       },
     })
 
     if (existingRedemption) {
       return NextResponse.json(
-        { error: 'This reward has already been redeemed in the current card cycle' },
+        { error: 'This reward has already been redeemed' },
         { status: 400 }
       )
     }
 
     // Note: We don't subtract stamps anymore - stamps remain unchanged
     // Only the redemption status is updated
+    // Card cycle only resets when stamps exceed full card, not on redemption
 
     // Record redemption with current card cycle number
     await prisma.redeemedReward.create({
@@ -91,24 +92,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Check if all rewards are redeemed in the current card cycle
-    const totalRewards = customer.sme.stampRewards.length
-    const redeemedCount = await prisma.redeemedReward.count({
-      where: {
-        customerId,
-        cardCycleNumber: currentCardCycle,
-      },
-    })
-
-    // If all rewards are redeemed, start a new card cycle
-    let newCardCycle = currentCardCycle
-    if (totalRewards > 0 && redeemedCount >= totalRewards) {
-      newCardCycle = currentCardCycle + 1
-      await prisma.customer.update({
-        where: { id: customerId },
-        data: { cardCycleNumber: newCardCycle },
-      })
-    }
+    // Don't reset card cycle on redemption - only reset when stamps exceed full card
+    // This allows customers to redeem rewards from previous cycles even after starting a new card
 
     // Create transaction record for redemption (negative stampsEarned)
     const transaction = await prisma.transaction.create({
@@ -142,7 +127,7 @@ export async function POST(request: NextRequest) {
       success: true,
       customer: {
         stamps: updatedCustomer?.stamps || customer.stamps,
-        cardCycleNumber: updatedCustomer?.cardCycleNumber || newCardCycle,
+        cardCycleNumber: updatedCustomer?.cardCycleNumber || currentCardCycle,
       },
       reward: {
         id: reward.id,
@@ -156,7 +141,6 @@ export async function POST(request: NextRequest) {
         description: transaction.description,
         createdAt: transaction.createdAt,
       },
-      cardCycleReset: newCardCycle > currentCardCycle,
     })
   } catch (error) {
     console.error('Error redeeming reward:', error)

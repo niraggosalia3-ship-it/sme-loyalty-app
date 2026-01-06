@@ -57,6 +57,8 @@ interface Customer {
   tierBenefits: TierBenefits[]
   tierUpgrade?: TierUpgrade | null
   redeemedRewardIds?: string[]
+  displayStamps?: number // Stamps for current card visualization
+  totalStamps?: number // Total accumulated stamps (for eligibility)
 }
 
 interface Transaction {
@@ -331,7 +333,7 @@ export default function CustomerDashboard() {
                 Your Stamp Card
               </h2>
               <StampCard
-                currentStamps={customer.stamps || 0}
+                currentStamps={customer.displayStamps ?? (customer.stamps || 0) % (customer.sme.stampsRequired || 10)}
                 totalStamps={customer.sme.stampsRequired || 10}
                 primaryColor={customer.sme.primaryColor}
                 secondaryColor={customer.sme.secondaryColor}
@@ -350,10 +352,17 @@ export default function CustomerDashboard() {
                     {customer.sme.stampRewards
                       .sort((a, b) => a.stampsRequired - b.stampsRequired)
                       .map((reward) => {
-                        // Check if reward has been redeemed
+                        // Check if reward has been redeemed (in any cycle)
                         const isRedeemed = customer.redeemedRewardIds?.includes(reward.id) || false
-                        const hasEnoughStamps = (customer.stamps || 0) >= reward.stampsRequired
+                        // Use totalStamps for eligibility (total accumulated across all cycles)
+                        const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
+                        const hasEnoughStamps = totalStamps >= reward.stampsRequired
                         const canRedeem = hasEnoughStamps && !isRedeemed
+                        
+                        // Don't show redeemed rewards
+                        if (isRedeemed) {
+                          return null
+                        }
                         
                         return (
                           <div
@@ -384,18 +393,14 @@ export default function CustomerDashboard() {
                                 )}
                                 <p className="text-xs text-gray-500 mt-2">
                                   Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
-                                  {!canRedeem && !isRedeemed && (
+                                  {!canRedeem && (
                                     <span className="ml-2 text-orange-600">
-                                      (Need {reward.stampsRequired - (customer.stamps || 0)} more)
+                                      (Need {reward.stampsRequired - totalStamps} more)
                                     </span>
                                   )}
                                 </p>
                               </div>
-                              {isRedeemed ? (
-                                <div className="ml-4 px-3 py-2 bg-gray-200 text-gray-600 text-xs font-semibold rounded whitespace-nowrap">
-                                  Redeemed
-                                </div>
-                              ) : canRedeem ? (
+                              {canRedeem ? (
                                 <div className="ml-4 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium text-sm text-center">
                                   Visit store to redeem
                                 </div>

@@ -46,12 +46,36 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Update customer stamps
-      const newStampsTotal = (customer.stamps || 0) + stampsToAdd
+      const stampsRequired = customer.sme.stampsRequired || 10
+      const previousStamps = customer.stamps || 0
+      const newStampsTotal = previousStamps + stampsToAdd
+      
+      // Check if we need to reset card cycle
+      // Card resets when: customer completes full card (reaches stampsRequired) and gets next stamp
+      const wasFullCard = previousStamps >= stampsRequired
+      const isNowFullCard = newStampsTotal >= stampsRequired
+      let cardWasReset = false
+      let newCardCycle = customer.cardCycleNumber || 1
+      let finalStamps = newStampsTotal
 
+      // If card was already full and we're adding more stamps, OR if we just completed the card
+      if (isNowFullCard && (wasFullCard || newStampsTotal === stampsRequired)) {
+        // Check if this stamp pushes us over (new card should start)
+        if (newStampsTotal > stampsRequired) {
+          // Reset to remainder and start new card
+          finalStamps = newStampsTotal % stampsRequired
+          newCardCycle = (customer.cardCycleNumber || 1) + 1
+          cardWasReset = true
+        }
+      }
+
+      // Update customer stamps and card cycle
       await prisma.customer.update({
         where: { id: customerId },
-        data: { stamps: newStampsTotal },
+        data: {
+          stamps: finalStamps,
+          cardCycleNumber: newCardCycle,
+        },
       })
 
       // Check for available rewards (milestones reached)
@@ -83,8 +107,13 @@ export async function POST(request: NextRequest) {
         where: { id: customerId },
         select: {
           stamps: true,
+          cardCycleNumber: true,
         },
       })
+
+      // Calculate display stamps for current card visualization
+      const displayStamps = stampsRequired > 0 ? (updatedCustomer?.stamps || finalStamps) % stampsRequired : (updatedCustomer?.stamps || finalStamps)
+      const totalStamps = newStampsTotal // Total accumulated stamps (for eligibility)
 
       return NextResponse.json({
         transaction: {
@@ -98,8 +127,12 @@ export async function POST(request: NextRequest) {
           createdAt: transaction.createdAt,
         },
         customer: {
-          stamps: updatedCustomer?.stamps ?? newStampsTotal,
+          stamps: updatedCustomer?.stamps ?? finalStamps,
+          cardCycleNumber: updatedCustomer?.cardCycleNumber ?? newCardCycle,
+          displayStamps,
+          totalStamps,
         },
+        cardWasReset,
         availableRewards: availableRewards.map((reward) => ({
           stampsRequired: reward.stampsRequired,
           rewardName: reward.rewardName,

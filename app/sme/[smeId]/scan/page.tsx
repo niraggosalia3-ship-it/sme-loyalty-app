@@ -43,6 +43,8 @@ interface Customer {
   availableBenefits: Benefit[]
   allBenefits?: Benefit[]
   redeemedRewardIds?: string[]
+  displayStamps?: number // Stamps for current card visualization
+  totalStamps?: number // Total accumulated stamps (for eligibility)
 }
 
 interface TierUpgrade {
@@ -655,7 +657,7 @@ export default function QRScanner() {
                   {customer.sme.stampsRequired && (
                     <div className="mb-4">
                       <StampCard
-                        currentStamps={customer.stamps || 0}
+                        currentStamps={customer.displayStamps ?? (customer.stamps || 0) % (customer.sme.stampsRequired || 10)}
                         totalStamps={customer.sme.stampsRequired}
                         primaryColor={customer.sme.primaryColor}
                         secondaryColor={customer.sme.secondaryColor}
@@ -930,26 +932,29 @@ export default function QRScanner() {
                   <div className="space-y-3">
                     {customer.sme.stampRewards
                       .map((reward) => {
-                        // Check if reward has been redeemed
+                        // Check if reward has been redeemed (in any cycle)
                         const isRedeemed = customer.redeemedRewardIds?.includes(reward.id) || false
-                        const canRedeem = (customer.stamps || 0) >= reward.stampsRequired && !isRedeemed
+                        // Use totalStamps for eligibility (total accumulated across all cycles)
+                        const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
+                        const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemed
+                        
+                        // Don't show redeemed rewards
+                        if (isRedeemed) {
+                          return null
+                        }
                         
                         return (
                           <div
                             key={reward.id}
                             className={`border rounded-lg p-4 ${
-                              isRedeemed
-                                ? 'bg-gray-100 border-gray-300'
-                                : canRedeem
-                                  ? 'bg-green-50 border-green-200'
-                                  : 'bg-blue-50 border-blue-200 opacity-70'
+                              canRedeem
+                                ? 'bg-green-50 border-green-200'
+                                : 'bg-blue-50 border-blue-200 opacity-70'
                             }`}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h4 className={`font-semibold ${
-                                  isRedeemed ? 'text-gray-500 line-through' : 'text-gray-900'
-                                }`}>
+                                <h4 className="font-semibold text-gray-900">
                                   {reward.rewardName}
                                 </h4>
                                 {reward.rewardDescription && (
@@ -959,9 +964,9 @@ export default function QRScanner() {
                                 )}
                                 <p className="text-xs text-gray-500 mt-2">
                                   Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
-                                  {!canRedeem && !isRedeemed && (
+                                  {!canRedeem && (
                                     <span className="ml-2 text-orange-600">
-                                      (Need {reward.stampsRequired - (customer.stamps || 0)} more)
+                                      (Need {reward.stampsRequired - totalStamps} more)
                                     </span>
                                   )}
                                 </p>
@@ -971,7 +976,7 @@ export default function QRScanner() {
                                   onClick={async () => {
                                     if (
                                       !confirm(
-                                        `Redeem reward: ${reward.rewardName}? This will use ${reward.stampsRequired} stamp${reward.stampsRequired !== 1 ? 's' : ''}.`
+                                        `Redeem reward: ${reward.rewardName}? This reward will be marked as redeemed. Your stamps will remain unchanged.`
                                       )
                                     ) {
                                       return
@@ -991,7 +996,7 @@ export default function QRScanner() {
                                       if (res.ok) {
                                         const data = await res.json()
                                         alert(
-                                          `Reward redeemed! Customer now has ${data.customer.stamps} stamp${data.customer.stamps !== 1 ? 's' : ''} remaining.`
+                                          `Reward redeemed successfully!`
                                         )
                                         // Refresh customer data to update redeemed status
                                         await fetchCustomer(customer.qrCodeId || qrCodeId)
@@ -1009,12 +1014,7 @@ export default function QRScanner() {
                                   Redeem
                                 </button>
                               )}
-                              {isRedeemed && (
-                                <span className="ml-4 px-3 py-2 bg-gray-200 text-gray-600 text-xs font-semibold rounded whitespace-nowrap">
-                                  Redeemed
-                                </span>
-                              )}
-                              {!canRedeem && !isRedeemed && (
+                              {!canRedeem && (
                                 <span className="ml-4 px-3 py-2 bg-gray-300 text-gray-500 text-xs font-semibold rounded whitespace-nowrap">
                                   Not Available
                                 </span>
