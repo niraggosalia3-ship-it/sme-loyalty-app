@@ -353,9 +353,7 @@ export default function CustomerDashboard() {
                     {customer.sme.stampRewards
                       .sort((a, b) => a.stampsRequired - b.stampsRequired)
                       .map((reward) => {
-                        // Check if reward has been redeemed in CURRENT cycle (for display)
-                        const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
-                        // Check if reward has been redeemed in ANY cycle (for eligibility - can only redeem once)
+                        // Check if reward has been redeemed in ANY cycle (rewards can only be redeemed once)
                         const isRedeemedInAnyCycle = customer.allRedeemedRewardIds?.includes(reward.id) || false
                         // Use totalStamps for eligibility (total accumulated across all cycles)
                         const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
@@ -363,8 +361,12 @@ export default function CustomerDashboard() {
                         // Can redeem if: has enough stamps AND not redeemed in any cycle
                         const canRedeem = hasEnoughStamps && !isRedeemedInAnyCycle
                         
-                        // Don't show rewards redeemed in current cycle (they're already used in this card)
-                        if (isRedeemedInCurrentCycle) {
+                        // Hide rewards that have been redeemed in ANY cycle (they can only be redeemed once)
+                        // This ensures:
+                        // - Rewards redeemed in previous cycles stay hidden
+                        // - Fresh rewards for new card are visible (not yet redeemed)
+                        // - Unredeemed rewards from previous cycles are visible (green if eligible)
+                        if (isRedeemedInAnyCycle) {
                           return null
                         }
                         
