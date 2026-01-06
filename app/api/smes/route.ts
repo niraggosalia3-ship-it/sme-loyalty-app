@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { randomBytes } from 'crypto'
+import { createMagicLinkToken, getMagicLinkUrl } from '@/lib/magic-link'
+import { sendMagicLinkEmail } from '@/lib/email'
 
 function generateUniqueId(length: number = 10): string {
   return randomBytes(Math.ceil(length / 2))
@@ -60,7 +62,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { companyName, bannerImageUrl } = body
+    const { companyName, bannerImageUrl, ownerEmail } = body
 
     if (!companyName || typeof companyName !== 'string' || !companyName.trim()) {
       return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
@@ -74,8 +76,31 @@ export async function POST(request: NextRequest) {
         companyName: companyName.trim(),
         uniqueLinkId,
         bannerImageUrl: bannerImageUrl || null,
+        ownerEmail: ownerEmail || null,
       },
     })
+
+    // Generate and send magic link if email provided
+    let magicLinkUrl: string | null = null
+    if (ownerEmail && ownerEmail.trim()) {
+      try {
+        const token = await createMagicLinkToken(sme.id, ownerEmail.trim())
+        magicLinkUrl = getMagicLinkUrl(sme.id, token)
+        
+        // Send magic link email (non-blocking)
+        sendMagicLinkEmail({
+          to: ownerEmail.trim(),
+          smeName: sme.companyName,
+          magicLinkUrl,
+        }).catch((error) => {
+          console.error('Failed to send magic link email:', error)
+          // Don't fail the request if email fails
+        })
+      } catch (error) {
+        console.error('Error creating magic link:', error)
+        // Don't fail the request if magic link creation fails
+      }
+    }
 
     return NextResponse.json({
       id: sme.id,
@@ -83,6 +108,7 @@ export async function POST(request: NextRequest) {
       uniqueLinkId: sme.uniqueLinkId,
       bannerImageUrl: sme.bannerImageUrl,
       createdAt: sme.createdAt,
+      magicLinkUrl, // Include magic link URL in response (for admin to copy if email fails)
     })
   } catch (error: any) {
     console.error('Error creating SME:', error)

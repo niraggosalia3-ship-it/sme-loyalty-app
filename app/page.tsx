@@ -15,6 +15,7 @@ interface SME {
 export default function AdminDashboard() {
   const [smes, setSmes] = useState<SME[]>([])
   const [companyName, setCompanyName] = useState('')
+  const [ownerEmail, setOwnerEmail] = useState('')
   const [bannerImage, setBannerImage] = useState<File | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -148,15 +149,26 @@ export default function AdminDashboard() {
       const res = await fetch('/api/smes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName, bannerImageUrl }),
+        body: JSON.stringify({ 
+          companyName, 
+          bannerImageUrl,
+          ownerEmail: ownerEmail.trim() || undefined,
+        }),
       })
 
       if (res.ok) {
         const data = await res.json()
         setNewLink(`${window.location.origin}/form/${data.uniqueLinkId}`)
         setCompanyName('')
+        setOwnerEmail('')
         setBannerImage(null)
         setBannerPreview(null)
+        
+        // Show magic link if provided
+        if (data.magicLinkUrl) {
+          alert(`SME created! Magic link sent to ${ownerEmail}. You can also copy this link: ${data.magicLinkUrl}`)
+        }
+        
         fetchSMEs()
       } else {
         // Handle API errors - get detailed error message
@@ -217,6 +229,23 @@ export default function AdminDashboard() {
                 placeholder="Enter company name"
                 required
               />
+            </div>
+            
+            <div>
+              <label htmlFor="ownerEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                Owner Email <span className="text-gray-400">(Optional)</span>
+              </label>
+              <input
+                type="email"
+                id="ownerEmail"
+                value={ownerEmail}
+                onChange={(e) => setOwnerEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="owner@company.com"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                If provided, we'll send a magic link to access the dashboard (no password needed!)
+              </p>
             </div>
             
             <div>
