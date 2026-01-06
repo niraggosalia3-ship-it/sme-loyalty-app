@@ -61,6 +61,8 @@ interface Customer {
 interface Transaction {
   id: string
   points: number
+  amount?: number | null
+  taxAmount?: number | null
   stampsEarned?: number | null
   description: string
   createdAt: string
@@ -657,9 +659,23 @@ export default function CustomerDashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Description
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Points
-                      </th>
+                      {customer.sme.loyaltyType === 'stamps' ? (
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Stamps
+                        </th>
+                      ) : (
+                        <>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Amount
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tax
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Points
+                          </th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -671,24 +687,42 @@ export default function CustomerDashboard() {
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {transaction.description}
                         </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                          transaction.points >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {transaction.points >= 0 ? '+' : ''}{transaction.points}
-                        </td>
+                        {customer.sme.loyaltyType === 'stamps' ? (
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
+                            (transaction.stampsEarned || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {(transaction.stampsEarned || 0) >= 0 ? '+' : ''}{transaction.stampsEarned || 0}
+                          </td>
+                        ) : (
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                              {transaction.amount !== null && transaction.amount !== undefined ? `$${transaction.amount.toFixed(2)}` : '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                              {transaction.taxAmount !== null && transaction.taxAmount !== undefined ? `$${transaction.taxAmount.toFixed(2)}` : '-'}
+                            </td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
+                              transaction.points >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {transaction.points >= 0 ? '+' : ''}{transaction.points}
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-gray-50">
-                    <tr>
-                      <td colSpan={2} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                        Total Points:
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                        {customer.points}
-                      </td>
-                    </tr>
-                  </tfoot>
+                  {customer.sme.loyaltyType !== 'stamps' && (
+                    <tfoot className="bg-gray-50">
+                      <tr>
+                        <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                          Total Points:
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                          {customer.points}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
               </div>
 
@@ -705,23 +739,46 @@ export default function CustomerDashboard() {
                           {new Date(transaction.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className={`text-right ml-3 ${
-                        transaction.points >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        <p className="text-base font-bold">
-                          {transaction.points >= 0 ? '+' : ''}{transaction.points}
-                        </p>
-                        <p className="text-xs text-gray-500">points</p>
-                      </div>
+                      {customer.sme.loyaltyType === 'stamps' ? (
+                        <div className={`text-right ml-3 ${
+                          (transaction.stampsEarned || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          <p className="text-base font-bold">
+                            {(transaction.stampsEarned || 0) >= 0 ? '+' : ''}{transaction.stampsEarned || 0}
+                          </p>
+                          <p className="text-xs text-gray-500">stamp{(transaction.stampsEarned || 0) !== 1 ? 's' : ''}</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className={`text-right ml-3 ${
+                            transaction.points >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            <p className="text-base font-bold">
+                              {transaction.points >= 0 ? '+' : ''}{transaction.points}
+                            </p>
+                            <p className="text-xs text-gray-500">points</p>
+                          </div>
+                          <div className="text-right ml-3 text-xs text-gray-600">
+                            {transaction.amount !== null && transaction.amount !== undefined && (
+                              <p className="mb-1">${transaction.amount.toFixed(2)}</p>
+                            )}
+                            {transaction.taxAmount !== null && transaction.taxAmount !== undefined && (
+                              <p className="text-gray-500">Tax: ${transaction.taxAmount.toFixed(2)}</p>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
-                <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200 mt-4">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm font-semibold text-gray-900">Total Points:</p>
-                    <p className="text-lg font-bold text-blue-900">{customer.points}</p>
+                {customer.sme.loyaltyType !== 'stamps' && (
+                  <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200 mt-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-semibold text-gray-900">Total Points:</p>
+                      <p className="text-lg font-bold text-blue-900">{customer.points}</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </>
           )}

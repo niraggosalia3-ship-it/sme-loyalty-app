@@ -1056,15 +1056,23 @@ export default function QRScanner() {
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Description
                             </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Amount
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Tax
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Points
-                            </th>
+                            {customer.sme.loyaltyType === 'stamps' ? (
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Stamps
+                              </th>
+                            ) : (
+                              <>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Amount
+                                </th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Tax
+                                </th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Points
+                                </th>
+                              </>
+                            )}
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -1079,17 +1087,27 @@ export default function QRScanner() {
                               <td className="px-4 py-3 text-sm text-gray-900">
                                 {txn.description}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                                {txn.amount !== null ? `$${txn.amount.toFixed(2)}` : '-'}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                                {txn.taxAmount !== null ? `$${txn.taxAmount.toFixed(2)}` : '-'}
-                              </td>
-                              <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
-                                txn.points >= 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {txn.points >= 0 ? '+' : ''}{txn.points}
-                              </td>
+                              {customer.sme.loyaltyType === 'stamps' ? (
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
+                                  (txn.stampsEarned || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {(txn.stampsEarned || 0) >= 0 ? '+' : ''}{txn.stampsEarned || 0}
+                                </td>
+                              ) : (
+                                <>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                                    {txn.amount !== null ? `$${txn.amount.toFixed(2)}` : '-'}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                                    {txn.taxAmount !== null ? `$${txn.taxAmount.toFixed(2)}` : '-'}
+                                  </td>
+                                  <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
+                                    txn.points >= 0 ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    {txn.points >= 0 ? '+' : ''}{txn.points}
+                                  </td>
+                                </>
+                              )}
                             </tr>
                           ))}
                         </tbody>
@@ -1112,19 +1130,34 @@ export default function QRScanner() {
                                 ID: {txn.id.substring(0, 8)}...
                               </p>
                             </div>
-                            <div className={`text-right ml-3 ${
-                              txn.points >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              <p className="text-base font-bold">
-                                {txn.points >= 0 ? '+' : ''}{txn.points}
-                              </p>
-                              <p className="text-xs text-gray-500">points</p>
+                            {customer.sme.loyaltyType === 'stamps' ? (
+                              <div className={`text-right ml-3 ${
+                                (txn.stampsEarned || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                <p className="text-base font-bold">
+                                  {(txn.stampsEarned || 0) >= 0 ? '+' : ''}{txn.stampsEarned || 0}
+                                </p>
+                                <p className="text-xs text-gray-500">stamp{(txn.stampsEarned || 0) !== 1 ? 's' : ''}</p>
+                              </div>
+                            ) : (
+                              <>
+                                <div className={`text-right ml-3 ${
+                                  txn.points >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  <p className="text-base font-bold">
+                                    {txn.points >= 0 ? '+' : ''}{txn.points}
+                                  </p>
+                                  <p className="text-xs text-gray-500">points</p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                          {customer.sme.loyaltyType !== 'stamps' && (
+                            <div className="flex justify-between text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                              <span>Amount: {txn.amount !== null ? `$${txn.amount.toFixed(2)}` : '-'}</span>
+                              <span>Tax: {txn.taxAmount !== null ? `$${txn.taxAmount.toFixed(2)}` : '-'}</span>
                             </div>
-                          </div>
-                          <div className="flex justify-between text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
-                            <span>Amount: {txn.amount !== null ? `$${txn.amount.toFixed(2)}` : '-'}</span>
-                            <span>Tax: {txn.taxAmount !== null ? `$${txn.taxAmount.toFixed(2)}` : '-'}</span>
-                          </div>
+                          )}
                         </div>
                       ))}
                     </div>
