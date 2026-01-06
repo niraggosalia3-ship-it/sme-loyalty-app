@@ -42,7 +42,8 @@ interface Customer {
   }
   availableBenefits: Benefit[]
   allBenefits?: Benefit[]
-  redeemedRewardIds?: string[]
+  redeemedRewardIds?: string[] // Current cycle only - for display filtering
+  allRedeemedRewardIds?: string[] // All cycles - for eligibility check
   displayStamps?: number // Stamps for current card visualization
   totalStamps?: number // Total accumulated stamps (for eligibility)
 }
@@ -932,14 +933,17 @@ export default function QRScanner() {
                   <div className="space-y-3">
                     {customer.sme.stampRewards
                       .map((reward) => {
-                        // Check if reward has been redeemed (in any cycle)
-                        const isRedeemed = customer.redeemedRewardIds?.includes(reward.id) || false
+                        // Check if reward has been redeemed in CURRENT cycle (for display)
+                        const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
+                        // Check if reward has been redeemed in ANY cycle (for eligibility - can only redeem once)
+                        const isRedeemedInAnyCycle = customer.allRedeemedRewardIds?.includes(reward.id) || false
                         // Use totalStamps for eligibility (total accumulated across all cycles)
                         const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
-                        const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemed
+                        // Can redeem if: has enough stamps AND not redeemed in any cycle
+                        const canRedeem = totalStamps >= reward.stampsRequired && !isRedeemedInAnyCycle
                         
-                        // Don't show redeemed rewards
-                        if (isRedeemed) {
+                        // Don't show rewards redeemed in current cycle (they're already used in this card)
+                        if (isRedeemedInCurrentCycle) {
                           return null
                         }
                         

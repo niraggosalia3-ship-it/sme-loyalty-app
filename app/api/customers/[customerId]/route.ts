@@ -93,12 +93,24 @@ export async function GET(
     // Get current card cycle number
     const currentCardCycle = customer.cardCycleNumber || 1
 
-    // Get ALL redeemed reward IDs (from any cycle) - rewards can only be redeemed once
+    // Get redeemed reward IDs for CURRENT card cycle only
+    // This allows fresh rewards to show on new cards, while hiding redeemed ones from current card
+    const currentCycleRedemptions = await prisma.redeemedReward.findMany({
+      where: {
+        customerId: customer.id,
+        cardCycleNumber: currentCardCycle,
+      },
+      select: { stampRewardId: true },
+    })
+    const redeemedRewardIds = currentCycleRedemptions.map(r => r.stampRewardId)
+    
+    // Also get ALL redeemed rewards (any cycle) for eligibility check
+    // A reward can only be redeemed once across all cycles
     const allRedeemedRewards = await prisma.redeemedReward.findMany({
       where: { customerId: customer.id },
       select: { stampRewardId: true },
     })
-    const redeemedRewardIds = Array.from(new Set(allRedeemedRewards.map(r => r.stampRewardId)))
+    const allRedeemedRewardIds = Array.from(new Set(allRedeemedRewards.map(r => r.stampRewardId)))
 
     // Calculate display stamps for current card visualization
     const stampsRequired = customer.sme.stampsRequired || 10
@@ -128,7 +140,8 @@ export async function GET(
       },
       tierBenefits,
       tierUpgrade: tierUpgradeInfo,
-      redeemedRewardIds, // Include for stamp programs (all cycles - rewards can only be redeemed once)
+      redeemedRewardIds, // Include for stamp programs (current cycle only - for display filtering)
+      allRedeemedRewardIds, // All redeemed rewards (any cycle - for eligibility check)
       displayStamps, // Stamps for current card visualization (0 to stampsRequired-1)
       totalStamps, // Total accumulated stamps (for reward eligibility)
     })

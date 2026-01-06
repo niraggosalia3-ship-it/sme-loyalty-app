@@ -56,7 +56,8 @@ interface Customer {
   }
   tierBenefits: TierBenefits[]
   tierUpgrade?: TierUpgrade | null
-  redeemedRewardIds?: string[]
+  redeemedRewardIds?: string[] // Current cycle only - for display filtering
+  allRedeemedRewardIds?: string[] // All cycles - for eligibility check
   displayStamps?: number // Stamps for current card visualization
   totalStamps?: number // Total accumulated stamps (for eligibility)
 }
@@ -352,15 +353,18 @@ export default function CustomerDashboard() {
                     {customer.sme.stampRewards
                       .sort((a, b) => a.stampsRequired - b.stampsRequired)
                       .map((reward) => {
-                        // Check if reward has been redeemed (in any cycle)
-                        const isRedeemed = customer.redeemedRewardIds?.includes(reward.id) || false
+                        // Check if reward has been redeemed in CURRENT cycle (for display)
+                        const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
+                        // Check if reward has been redeemed in ANY cycle (for eligibility - can only redeem once)
+                        const isRedeemedInAnyCycle = customer.allRedeemedRewardIds?.includes(reward.id) || false
                         // Use totalStamps for eligibility (total accumulated across all cycles)
                         const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
                         const hasEnoughStamps = totalStamps >= reward.stampsRequired
-                        const canRedeem = hasEnoughStamps && !isRedeemed
+                        // Can redeem if: has enough stamps AND not redeemed in any cycle
+                        const canRedeem = hasEnoughStamps && !isRedeemedInAnyCycle
                         
-                        // Don't show redeemed rewards
-                        if (isRedeemed) {
+                        // Don't show rewards redeemed in current cycle (they're already used in this card)
+                        if (isRedeemedInCurrentCycle) {
                           return null
                         }
                         
@@ -368,21 +372,17 @@ export default function CustomerDashboard() {
                           <div
                             key={reward.id}
                             className={`border rounded-lg p-4 ${
-                              isRedeemed
-                                ? 'bg-gray-100 border-gray-300'
-                                : canRedeem
-                                  ? 'bg-green-50 border-green-500'
-                                  : 'bg-blue-50 border-blue-200 opacity-70'
+                              canRedeem
+                                ? 'bg-green-50 border-green-500'
+                                : 'bg-blue-50 border-blue-200 opacity-70'
                             }`}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <h4 className={`font-semibold ${
-                                  isRedeemed 
-                                    ? 'text-gray-500 line-through' 
-                                    : canRedeem
-                                      ? 'text-green-900'
-                                      : 'text-gray-700'
+                                  canRedeem
+                                    ? 'text-green-900'
+                                    : 'text-gray-700'
                                 }`}>
                                   {reward.rewardName}
                                 </h4>
