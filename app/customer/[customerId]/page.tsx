@@ -358,9 +358,32 @@ export default function CustomerDashboard() {
                         const isRedeemedInCurrentCycle = customer.redeemedRewardIds?.includes(reward.id) || false
                         // Use totalStamps for eligibility (total accumulated across all cycles)
                         const totalStamps = customer.totalStamps ?? customer.stamps ?? 0
-                        const hasEnoughStamps = totalStamps >= reward.stampsRequired
-                        // Can redeem if: has enough stamps AND not redeemed in current cycle
-                        const canRedeem = hasEnoughStamps && !isRedeemedInCurrentCycle
+                        const displayStamps = customer.displayStamps ?? (customer.stamps || 0)
+                        const stampsRequired = customer.sme.stampsRequired || 10
+                        const currentCardCycle = customer.cardCycleNumber || 1
+                        
+                        // Check if this reward was already available in a previous cycle
+                        // A reward is "old" if it was eligible in a previous cycle
+                        // A reward is "new" if it's only eligible on the current card
+                        const stampsFromPreviousCycles = totalStamps - displayStamps
+                        const wasEligibleInPreviousCycle = stampsFromPreviousCycles >= reward.stampsRequired
+                        
+                        // For new card rewards: they should be grey until earned on the CURRENT card
+                        // For old card rewards: they should be green if not redeemed
+                        const hasEnoughStampsTotal = totalStamps >= reward.stampsRequired
+                        const hasEnoughStampsOnCurrentCard = displayStamps >= reward.stampsRequired
+                        
+                        // Can redeem if:
+                        // - Has enough total stamps AND
+                        // - Not redeemed in current cycle AND
+                        // - (Either was eligible in previous cycle OR has enough stamps on current card)
+                        // For new card rewards (currentCardCycle > 1 and not eligible in previous cycle):
+                        //   They should only be redeemable if earned on current card
+                        // For old card rewards (eligible in previous cycle):
+                        //   They should be redeemable if not redeemed
+                        const isNewCardReward = currentCardCycle > 1 && !wasEligibleInPreviousCycle
+                        const canRedeem = hasEnoughStampsTotal && !isRedeemedInCurrentCycle && 
+                          (wasEligibleInPreviousCycle || (hasEnoughStampsOnCurrentCard && !isNewCardReward))
                         
                         // Hide rewards that have been redeemed in CURRENT cycle only
                         // This ensures:
@@ -399,7 +422,10 @@ export default function CustomerDashboard() {
                                   Requires {reward.stampsRequired} stamp{reward.stampsRequired !== 1 ? 's' : ''}
                                   {!canRedeem && (
                                     <span className="ml-2 text-orange-600">
-                                      (Need {reward.stampsRequired - totalStamps} more)
+                                      {wasEligibleInPreviousCycle 
+                                        ? `(Redeem from previous card)`
+                                        : `(Need ${reward.stampsRequired - displayStamps} more on current card)`
+                                      }
                                     </span>
                                   )}
                                 </p>
