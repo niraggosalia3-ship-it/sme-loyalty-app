@@ -138,26 +138,42 @@ export async function POST(request: NextRequest) {
       }
 
       // Get reward instances with actual status (available, not locked/redeemed/expired)
-      // Check both current cycle and previous cycle for unredeemed rewards
+      // Query for all cycles up to current cycle to catch all available rewards
+      // Build array of cycle numbers to check (current cycle and all previous cycles)
+      const cyclesToCheck: number[] = []
+      for (let cycle = 1; cycle <= unlockCardCycle; cycle++) {
+        cyclesToCheck.push(cycle)
+      }
+
       const rewardInstances = await prisma.rewardInstance.findMany({
         where: {
           customerId,
           cardCycleNumber: {
-            in: unlockCardCycle > 1 
-              ? [unlockCardCycle, unlockCardCycle - 1] // Current and previous cycle
-              : [unlockCardCycle], // Only current cycle if on first card
+            in: cyclesToCheck,
           },
-          status: 'available', // Only show rewards that are actually available
+          status: 'available', // Only show rewards that are actually available (not locked/redeemed/expired)
         },
         include: {
           stampReward: true,
         },
+        orderBy: [
+          { cardCycleNumber: 'desc' }, // Newer cycles first
+          { stampReward: { order: 'asc' } }, // By reward order
+        ],
       })
 
       // Get available rewards for response (only those with status "available")
+      // Remove duplicates (same reward from different cycles) - keep the one from the newest cycle
+      const seenRewardIds = new Set<string>()
       const availableRewards = rewardInstances
         .map((ri) => ri.stampReward)
-        .filter((reward) => reward !== null) as typeof customer.sme.stampRewards
+        .filter((reward) => {
+          if (!reward || seenRewardIds.has(reward.id)) {
+            return false
+          }
+          seenRewardIds.add(reward.id)
+          return true
+        }) as typeof customer.sme.stampRewards
 
       // Create transaction record
       const transaction = await prisma.transaction.create({
