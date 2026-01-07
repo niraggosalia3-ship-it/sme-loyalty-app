@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkAndUpgradeTier } from '@/lib/tier-upgrade'
 import { notifyWalletPassUpdate } from '@/lib/push-notifications'
+import {
+  createRewardInstancesForCycle,
+  unlockRewardInstance,
+  calculateExpiryDate,
+} from '@/lib/reward-instance'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,13 +54,28 @@ export async function POST(request: NextRequest) {
       const stampsRequired = customer.sme.stampsRequired || 10
       const previousStamps = customer.stamps || 0
       const newStampsTotal = previousStamps + stampsToAdd
+      const previousCardCycle = customer.cardCycleNumber || 1
       
       // Card reset logic:
       // - At 10/10, show 10/10 (card is complete but not reset yet)
       // - Only reset when we EXCEED stampsRequired (11th stamp triggers reset to 1/10 on new card)
       let cardWasReset = false
-      let newCardCycle = customer.cardCycleNumber || 1
+      let newCardCycle = previousCardCycle
       let finalStamps = newStampsTotal
+
+      // Check if this is the first stamp for this customer (need to create reward instances for cycle 1)
+      const existingInstances = await prisma.rewardInstance.findFirst({
+        where: {
+          customerId,
+          cardCycleNumber: 1,
+        },
+      })
+
+      // If no reward instances exist yet, create them for the first card cycle
+      if (!existingInstances && customer.sme.stampRewards.length > 0) {
+        const stampRewardIds = customer.sme.stampRewards.map((r) => r.id)
+        await createRewardInstancesForCycle(customerId, 1, stampRewardIds)
+      }
 
       // Only reset when we EXCEED the required stamps (not when we reach it)
       // At 10/10, show 10/10. At 11th stamp, reset to 1/10 on new card
@@ -65,8 +85,15 @@ export async function POST(request: NextRequest) {
         // Remainder goes to new card
         finalStamps = newStampsTotal % stampsRequired
         // Increment card cycle by number of full cards completed
-        newCardCycle = (customer.cardCycleNumber || 1) + fullCardsCompleted
+        newCardCycle = previousCardCycle + fullCardsCompleted
         cardWasReset = true
+
+        // Create reward instances for new card cycles
+        // Create instances for all newly started cycles
+        for (let cycle = previousCardCycle + 1; cycle <= newCardCycle; cycle++) {
+          const stampRewardIds = customer.sme.stampRewards.map((r) => r.id)
+          await createRewardInstancesForCycle(customerId, cycle, stampRewardIds)
+        }
       }
 
       // Update customer stamps and card cycle
@@ -78,9 +105,41 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Check for available rewards (milestones reached)
+      // Calculate total accumulated stamps for unlocking rewards
+      const unlockCardCycle = newCardCycle
+      const unlockStamps = finalStamps
+      const unlockTotalStamps = stampsRequired > 0
+        ? ((unlockCardCycle - 1) * stampsRequired) + unlockStamps
+        : unlockStamps
+
+      // Unlock reward instances when milestones are reached
+      // Check each reward to see if it should be unlocked
+      for (const reward of customer.sme.stampRewards) {
+        // Check if total stamps reached this reward's requirement
+        if (unlockTotalStamps >= reward.stampsRequired) {
+          // Unlock for all card cycles where the customer has enough stamps
+          // Calculate which cycles should have this reward unlocked
+          for (let cycle = 1; cycle <= unlockCardCycle; cycle++) {
+            // Calculate total stamps at end of this cycle
+            const stampsAtCycleEnd = cycle < unlockCardCycle
+              ? stampsRequired // Previous cycles are full
+              : unlockStamps // Current cycle has current stamps
+            
+            const totalStampsAtCycle = stampsRequired > 0
+              ? ((cycle - 1) * stampsRequired) + stampsAtCycleEnd
+              : stampsAtCycleEnd
+            
+            // If customer had enough stamps at this cycle, unlock the reward
+            if (totalStampsAtCycle >= reward.stampsRequired) {
+              await unlockRewardInstance(customerId, reward.id, cycle)
+            }
+          }
+        }
+      }
+
+      // Get available rewards for response
       const availableRewards = customer.sme.stampRewards.filter(
-        (reward) => newStampsTotal >= reward.stampsRequired
+        (reward) => unlockTotalStamps >= reward.stampsRequired
       )
 
       // Create transaction record

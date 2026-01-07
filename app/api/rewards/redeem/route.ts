@@ -68,33 +68,76 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if already redeemed in CURRENT cycle only
-    // Rewards can be redeemed once per card cycle, so they become available again on new cards
-    const existingRedemption = await prisma.redeemedReward.findFirst({
+    // Find the RewardInstance for this reward and card cycle
+    // Check both current cycle and previous cycle (for unredeemed rewards from old cards)
+    const rewardInstance = await prisma.rewardInstance.findFirst({
       where: {
         customerId,
         stampRewardId,
-        cardCycleNumber: currentCardCycle, // Only check current cycle
+        cardCycleNumber: {
+          in: [currentCardCycle, currentCardCycle - 1], // Current or previous cycle
+        },
+        status: 'available', // Must be available to redeem
+      },
+      orderBy: {
+        cardCycleNumber: 'desc', // Prefer current cycle, then previous
       },
     })
 
-    if (existingRedemption) {
+    if (!rewardInstance) {
+      // Check if it exists but is not available
+      const existingInstance = await prisma.rewardInstance.findFirst({
+        where: {
+          customerId,
+          stampRewardId,
+          cardCycleNumber: {
+            in: [currentCardCycle, currentCardCycle - 1],
+          },
+        },
+      })
+
+      if (existingInstance) {
+        if (existingInstance.status === 'redeemed') {
+          return NextResponse.json(
+            { error: 'This reward has already been redeemed' },
+            { status: 400 }
+          )
+        }
+        if (existingInstance.status === 'locked') {
+          return NextResponse.json(
+            { error: 'This reward is not yet available (not enough stamps)' },
+            { status: 400 }
+          )
+        }
+        if (existingInstance.status === 'expired') {
+          return NextResponse.json(
+            { error: 'This reward has expired' },
+            { status: 400 }
+          )
+        }
+      }
+
       return NextResponse.json(
-        { error: 'This reward has already been redeemed in the current card cycle' },
-        { status: 400 }
+        { error: 'Reward instance not found. Please ensure the reward is available.' },
+        { status: 404 }
       )
     }
 
-    // Note: We don't subtract stamps anymore - stamps remain unchanged
-    // Only the redemption status is updated
-    // Card cycle only resets when stamps exceed full card, not on redemption
+    // Update RewardInstance status to redeemed
+    const updatedInstance = await prisma.rewardInstance.update({
+      where: { id: rewardInstance.id },
+      data: {
+        status: 'redeemed',
+        redeemedAt: new Date(),
+      },
+    })
 
-    // Record redemption with current card cycle number
+    // Also create RedeemedReward record for historical tracking (during transition)
     await prisma.redeemedReward.create({
       data: {
         customerId,
         stampRewardId,
-        cardCycleNumber: currentCardCycle,
+        cardCycleNumber: rewardInstance.cardCycleNumber,
       },
     })
 

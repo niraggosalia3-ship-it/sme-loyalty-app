@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getRewardInstancesForCustomer } from '@/lib/reward-instance'
 
 function parseBenefits(benefits: string | null | undefined): string[] {
   if (!benefits) {
@@ -86,37 +87,30 @@ export async function GET(
     // Get current card cycle number
     const currentCardCycle = customer.cardCycleNumber || 1
 
+    // Get reward instances for customer (current and previous cycles)
+    const rewardInstances = await getRewardInstancesForCustomer(
+      customer.id,
+      currentCardCycle,
+      false // Exclude expired rewards
+    )
+
     // Get redeemed reward IDs for CURRENT card cycle only
-    // This allows fresh rewards to show on new cards, while hiding redeemed ones from current card
-    const currentCycleRedemptions = await prisma.redeemedReward.findMany({
-      where: {
-        customerId: customer.id,
-        cardCycleNumber: currentCardCycle,
-      },
-      select: { stampRewardId: true },
-    })
-    const redeemedRewardIds = currentCycleRedemptions.map(r => r.stampRewardId)
-    
+    const currentCycleInstances = rewardInstances.filter(
+      (ri) => ri.cardCycleNumber === currentCardCycle && ri.status === 'redeemed'
+    )
+    const redeemedRewardIds = currentCycleInstances.map((ri) => ri.stampRewardId)
+
     // Get redeemed reward IDs for PREVIOUS card cycle (if on a new card)
-    // This prevents old card rewards from showing if they were already redeemed
-    const previousCycleRedemptions = currentCardCycle > 1
-      ? await prisma.redeemedReward.findMany({
-          where: {
-            customerId: customer.id,
-            cardCycleNumber: currentCardCycle - 1,
-          },
-          select: { stampRewardId: true },
-        })
-      : []
-    const previousCycleRedeemedRewardIds = previousCycleRedemptions.map(r => r.stampRewardId)
-    
-    // Also get ALL redeemed rewards (any cycle) for eligibility check
-    // A reward can only be redeemed once across all cycles
-    const allRedeemedRewards = await prisma.redeemedReward.findMany({
-      where: { customerId: customer.id },
-      select: { stampRewardId: true },
-    })
-    const allRedeemedRewardIds = Array.from(new Set(allRedeemedRewards.map(r => r.stampRewardId)))
+    const previousCycleInstances = rewardInstances.filter(
+      (ri) => ri.cardCycleNumber === currentCardCycle - 1 && ri.status === 'redeemed'
+    )
+    const previousCycleRedeemedRewardIds = previousCycleInstances.map((ri) => ri.stampRewardId)
+
+    // Get ALL redeemed reward IDs (any cycle) for eligibility check
+    const allRedeemedInstances = rewardInstances.filter((ri) => ri.status === 'redeemed')
+    const allRedeemedRewardIds = Array.from(
+      new Set(allRedeemedInstances.map((ri) => ri.stampRewardId))
+    )
 
     // Calculate display stamps for current card visualization
     const stampsRequired = customer.sme.stampsRequired || 10

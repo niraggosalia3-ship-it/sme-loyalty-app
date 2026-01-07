@@ -64,6 +64,7 @@ model Customer {
   customerBenefits    CustomerBenefit[]
   walletPass          WalletPass?
   redeemedRewards     RedeemedReward[]
+  rewardInstances     RewardInstance[]
 }
 
 model Transaction {
@@ -112,6 +113,7 @@ model StampReward {
   order             Int // Display order (for multiple milestones)
   sme               SME              @relation(fields: [smeId], references: [id], onDelete: Cascade)
   redeemedRewards   RedeemedReward[]
+  rewardInstances   RewardInstance[]
 }
 
 model RedeemedReward {
@@ -122,6 +124,25 @@ model RedeemedReward {
   redeemedAt    DateTime    @default(now())
   customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   stampReward   StampReward @relation(fields: [stampRewardId], references: [id], onDelete: Cascade)
+}
+
+model RewardInstance {
+  id              String      @id @default(cuid())
+  customerId      String
+  stampRewardId  String      // Reference to StampReward (template)
+  cardCycleNumber Int         // Which card cycle this reward belongs to
+  status          String      // "locked" | "available" | "redeemed" | "expired"
+  createdAt       DateTime    @default(now()) // When reward instance was created
+  unlockedAt      DateTime?   // When customer earned enough stamps
+  redeemedAt      DateTime?   // When SME redeemed it
+  expiresAt       DateTime?   // Year-end expiry (Dec 31 of next year from creation)
+  customer        Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  stampReward     StampReward @relation(fields: [stampRewardId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, stampRewardId, cardCycleNumber]) // One reward instance per reward per cycle
+  @@index([customerId, cardCycleNumber])
+  @@index([customerId, status])
+  @@index([expiresAt]) // For expiration queries
 }
 
 model SMEAccessToken {
