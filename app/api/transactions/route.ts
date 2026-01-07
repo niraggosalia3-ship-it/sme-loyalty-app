@@ -137,10 +137,27 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Get available rewards for response
-      const availableRewards = customer.sme.stampRewards.filter(
-        (reward) => unlockTotalStamps >= reward.stampsRequired
-      )
+      // Get reward instances with actual status (available, not locked/redeemed/expired)
+      // Check both current cycle and previous cycle for unredeemed rewards
+      const rewardInstances = await prisma.rewardInstance.findMany({
+        where: {
+          customerId,
+          cardCycleNumber: {
+            in: unlockCardCycle > 1 
+              ? [unlockCardCycle, unlockCardCycle - 1] // Current and previous cycle
+              : [unlockCardCycle], // Only current cycle if on first card
+          },
+          status: 'available', // Only show rewards that are actually available
+        },
+        include: {
+          stampReward: true,
+        },
+      })
+
+      // Get available rewards for response (only those with status "available")
+      const availableRewards = rewardInstances
+        .map((ri) => ri.stampReward)
+        .filter((reward) => reward !== null) as typeof customer.sme.stampRewards
 
       // Create transaction record
       const transaction = await prisma.transaction.create({
