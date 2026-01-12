@@ -75,20 +75,123 @@ export default function QRScanner() {
   const [tierUpgrade, setTierUpgrade] = useState<TierUpgrade | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loadingTransactions, setLoadingTransactions] = useState(false)
+  const [cameraPermission, setCameraPermission] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown')
+  const [cameraRequesting, setCameraRequesting] = useState(false)
   const scannerRef = useRef<Html5Qrcode | null>(null)
 
-  interface Transaction {
-    id: string
-    customerId: string
-    points: number
-    stampsEarned?: number | null
-    description: string
-    amount: number | null
-    taxAmount: number | null
-    createdAt: string
+  // Check camera permission status on mount
+  useEffect(() => {
+    checkCameraPermission()
+  }, [])
+
+  const checkCameraPermission = async () => {
+    try {
+      // Check if Permissions API is supported
+      if ('permissions' in navigator && 'query' in navigator.permissions) {
+        try {
+          const result = await navigator.permissions.query({ name: 'camera' as PermissionName })
+          setCameraPermission(result.state)
+          
+          // Listen for permission changes
+          result.addEventListener('change', () => {
+            setCameraPermission(result.state)
+            // Save preference to localStorage
+            if (result.state === 'granted') {
+              localStorage.setItem('qr_scanner_camera_permission', 'granted')
+            }
+          })
+        } catch (e) {
+          // Permissions API might not support camera query on all browsers
+          // Fall back to trying to get user media
+          tryCameraAccess()
+        }
+      } else {
+        // Fallback: Check localStorage for saved preference
+        const savedPermission = localStorage.getItem('qr_scanner_camera_permission')
+        if (savedPermission === 'granted') {
+          setCameraPermission('granted')
+        } else {
+          // Try to access camera to check permission
+          tryCameraAccess()
+        }
+      }
+    } catch (error) {
+      console.error('Error checking camera permission:', error)
+    }
   }
 
-  const startScanning = async () => {
+  const tryCameraAccess = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraPermission('denied')
+        return
+      }
+
+      // Try to get camera stream to check permission
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      // Permission granted
+      setCameraPermission('granted')
+      localStorage.setItem('qr_scanner_camera_permission', 'granted')
+      // Stop the stream immediately (we just needed to check permission)
+      stream.getTracks().forEach(track => track.stop())
+    } catch (error: any) {
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setCameraPermission('denied')
+        localStorage.setItem('qr_scanner_camera_permission', 'denied')
+      } else {
+        setCameraPermission('prompt')
+      }
+    }
+  }
+
+  const requestCameraPermission = async () => {
+    setCameraRequesting(true)
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Your browser does not support camera access. Please use manual entry.')
+        setManualEntry(true)
+        setCameraRequesting(false)
+        return
+      }
+
+      // Request camera permission explicitly
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment' // Use back camera on mobile
+        } 
+      })
+      
+      // Permission granted
+      setCameraPermission('granted')
+      localStorage.setItem('qr_scanner_camera_permission', 'granted')
+      
+      // Stop the test stream
+      stream.getTracks().forEach(track => track.stop())
+      
+      // Now start scanning
+      await startScanningWithPermission()
+    } catch (error: any) {
+      console.error('Camera permission denied:', error)
+      setCameraPermission('denied')
+      localStorage.setItem('qr_scanner_camera_permission', 'denied')
+      
+      let errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.'
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage = 'Camera permission was denied. Please allow camera access in your browser settings and try again.'
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = 'No camera found on this device. Please use manual entry.'
+        setManualEntry(true)
+      } else if (error.name === 'NotReadableError') {
+        errorMessage = 'Camera is already in use by another app. Please close other apps using the camera and try again.'
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setCameraRequesting(false)
+    }
+  }
+
+  const startScanningWithPermission = async () => {
     try {
       // Check if we're on HTTPS (required for camera access on most browsers)
       const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost'
@@ -99,23 +202,25 @@ export default function QRScanner() {
         return
       }
 
-      // Check if getUserMedia is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Your browser does not support camera access. Please use manual entry.')
-        setManualEntry(true)
-        return
-      }
-
       // Set scanning to true first so the div renders
       setScanning(true)
 
       // Wait a tick for React to render the div
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 150))
 
       // Check if element exists
       const element = document.getElementById('qr-reader')
       if (!element) {
         throw new Error('Scanner container element not found')
+      }
+
+      // Stop any existing scanner
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop()
+        } catch (e) {
+          // Ignore stop errors
+        }
       }
 
       const html5QrCode = new Html5Qrcode('qr-reader')
@@ -146,6 +251,8 @@ export default function QRScanner() {
       if (err?.message) {
         if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
           errorMessage = 'Camera permission denied. Please allow camera access in your browser settings and try again, or use manual entry.'
+          setCameraPermission('denied')
+          localStorage.setItem('qr_scanner_camera_permission', 'denied')
         } else if (err.message.includes('NotFoundError') || err.message.includes('no camera')) {
           errorMessage = 'No camera found on this device. Please use manual entry.'
         } else if (err.message.includes('NotReadableError') || err.message.includes('DeviceInUse')) {
@@ -158,6 +265,39 @@ export default function QRScanner() {
       alert(errorMessage)
       setManualEntry(true)
     }
+  }
+
+  interface Transaction {
+    id: string
+    customerId: string
+    points: number
+    stampsEarned?: number | null
+    description: string
+    amount: number | null
+    taxAmount: number | null
+    createdAt: string
+  }
+
+  const startScanning = async () => {
+    // If permission is already granted, start scanning directly
+    if (cameraPermission === 'granted') {
+      await startScanningWithPermission()
+      return
+    }
+
+    // If permission is denied, show alert and manual entry
+    if (cameraPermission === 'denied') {
+      const retry = confirm('Camera permission was previously denied. Would you like to request access again?\n\nClick OK to retry, or Cancel to use manual entry.')
+      if (retry) {
+        await requestCameraPermission()
+      } else {
+        setManualEntry(true)
+      }
+      return
+    }
+
+    // If permission is unknown or prompt, request it
+    await requestCameraPermission()
   }
 
   const stopScanning = () => {
@@ -499,12 +639,49 @@ export default function QRScanner() {
           <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4 md:mb-6">
             {!scanning && !manualEntry && (
               <div className="space-y-3 md:space-y-4">
+                {/* Camera Permission Status Indicator */}
+                {cameraPermission === 'granted' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                    <p className="text-sm text-green-800">
+                      ✓ Camera access granted - Ready to scan
+                    </p>
+                  </div>
+                )}
+                {cameraPermission === 'denied' && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                    <p className="text-sm text-yellow-800">
+                      ⚠ Camera access denied - Click below to request again or use manual entry
+                    </p>
+                  </div>
+                )}
+                
+                {/* Main Scan Button */}
                 <button
                   onClick={startScanning}
-                  className="w-full px-4 md:px-6 py-3 md:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-base md:text-lg"
+                  disabled={cameraRequesting}
+                  className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-lg font-semibold text-base md:text-lg transition-all ${
+                    cameraRequesting
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : cameraPermission === 'granted'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Start QR Scanner
+                  {cameraRequesting ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Requesting camera access...
+                    </span>
+                  ) : cameraPermission === 'granted' ? (
+                    '📷 Start QR Scanner'
+                  ) : (
+                    '📷 Request Camera Access & Scan'
+                  )}
                 </button>
+                
                 <div className="text-center text-gray-500 text-sm">or</div>
                 <button
                   onClick={() => setManualEntry(true)}
