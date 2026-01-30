@@ -79,14 +79,21 @@ export default function QRScanner() {
   const [cameraRequesting, setCameraRequesting] = useState(false)
   const scannerRef = useRef<Html5Qrcode | null>(null)
 
-  // Check camera permission status on mount
+  // Check camera permission status on mount (non-intrusive check)
   useEffect(() => {
     checkCameraPermission()
   }, [])
 
   const checkCameraPermission = async () => {
     try {
-      // Check if Permissions API is supported
+      // Check localStorage first for saved preference
+      const savedPermission = localStorage.getItem('qr_scanner_camera_permission')
+      if (savedPermission === 'granted') {
+        setCameraPermission('granted')
+        return
+      }
+      
+      // Check if Permissions API is supported (non-intrusive check)
       if ('permissions' in navigator && 'query' in navigator.permissions) {
         try {
           const result = await navigator.permissions.query({ name: 'camera' as PermissionName })
@@ -95,58 +102,39 @@ export default function QRScanner() {
           // Listen for permission changes
           result.addEventListener('change', () => {
             setCameraPermission(result.state)
-            // Save preference to localStorage
             if (result.state === 'granted') {
               localStorage.setItem('qr_scanner_camera_permission', 'granted')
+            } else if (result.state === 'denied') {
+              localStorage.setItem('qr_scanner_camera_permission', 'denied')
             }
           })
         } catch (e) {
           // Permissions API might not support camera query on all browsers
-          // Fall back to trying to get user media
-          tryCameraAccess()
+          // Don't try to access camera automatically - wait for user to click
+          setCameraPermission('prompt')
         }
       } else {
-        // Fallback: Check localStorage for saved preference
-        const savedPermission = localStorage.getItem('qr_scanner_camera_permission')
-        if (savedPermission === 'granted') {
-          setCameraPermission('granted')
-        } else {
-          // Try to access camera to check permission
-          tryCameraAccess()
-        }
+        // Permissions API not available - wait for user to click
+        setCameraPermission('prompt')
       }
     } catch (error) {
       console.error('Error checking camera permission:', error)
-    }
-  }
-
-  const tryCameraAccess = async () => {
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setCameraPermission('denied')
-        return
-      }
-
-      // Try to get camera stream to check permission
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-      // Permission granted
-      setCameraPermission('granted')
-      localStorage.setItem('qr_scanner_camera_permission', 'granted')
-      // Stop the stream immediately (we just needed to check permission)
-      stream.getTracks().forEach(track => track.stop())
-    } catch (error: any) {
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        setCameraPermission('denied')
-        localStorage.setItem('qr_scanner_camera_permission', 'denied')
-      } else {
-        setCameraPermission('prompt')
-      }
+      setCameraPermission('prompt')
     }
   }
 
   const requestCameraPermission = async () => {
     setCameraRequesting(true)
     try {
+      // Check HTTPS requirement first
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      if (!isSecure) {
+        alert('Camera access requires HTTPS. Please use the manual entry option or access the site via HTTPS.')
+        setManualEntry(true)
+        setCameraRequesting(false)
+        return
+      }
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert('Your browser does not support camera access. Please use manual entry.')
         setManualEntry(true)
@@ -154,38 +142,70 @@ export default function QRScanner() {
         return
       }
 
-      // Request camera permission explicitly
+      // Clear any previous denied state to allow retry
+      if (cameraPermission === 'denied') {
+        localStorage.removeItem('qr_scanner_camera_permission')
+      }
+
+      // Request camera permission - this will trigger browser's native prompt
+      // Use simpler constraints to avoid OverconstrainedError
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'environment' // Use back camera on mobile
         } 
       })
       
-      // Permission granted
+      // Permission granted - stop the test stream
+      stream.getTracks().forEach(track => track.stop())
+      
+      // Update state
       setCameraPermission('granted')
       localStorage.setItem('qr_scanner_camera_permission', 'granted')
       
-      // Stop the test stream
-      stream.getTracks().forEach(track => track.stop())
+      // Small delay to ensure stream is fully stopped before starting scanner
+      await new Promise(resolve => setTimeout(resolve, 300))
       
-      // Now start scanning
+      // Now start scanning with the scanner library
       await startScanningWithPermission()
     } catch (error: any) {
-      console.error('Camera permission denied:', error)
-      setCameraPermission('denied')
-      localStorage.setItem('qr_scanner_camera_permission', 'denied')
+      console.error('Camera permission error:', error)
       
-      let errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.'
+      let errorMessage = 'Could not access camera.'
+      let shouldShowManualEntry = false
+      
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        errorMessage = 'Camera permission was denied. Please allow camera access in your browser settings and try again.'
+        setCameraPermission('denied')
+        localStorage.setItem('qr_scanner_camera_permission', 'denied')
+        errorMessage = 'Camera permission was denied.\n\nTo fix:\n1. Look for a camera icon in your browser\'s address bar\n2. Click it and select "Allow"\n3. Refresh the page and try again\n\nOr use manual entry below.'
+        shouldShowManualEntry = true
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'No camera found on this device. Please use manual entry.'
-        setManualEntry(true)
-      } else if (error.name === 'NotReadableError') {
+        shouldShowManualEntry = true
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
         errorMessage = 'Camera is already in use by another app. Please close other apps using the camera and try again.'
+      } else if (error.name === 'OverconstrainedError') {
+        // Try again with minimal constraints
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+          stream.getTracks().forEach(track => track.stop())
+          setCameraPermission('granted')
+          localStorage.setItem('qr_scanner_camera_permission', 'granted')
+          await new Promise(resolve => setTimeout(resolve, 300))
+          await startScanningWithPermission()
+          return // Success, exit early
+        } catch (retryError: any) {
+          errorMessage = 'Camera configuration error. Please try again or use manual entry.'
+          shouldShowManualEntry = true
+        }
+      } else {
+        errorMessage = `Camera error: ${error.message || error.name}. Please try again or use manual entry.`
+        shouldShowManualEntry = true
       }
       
       alert(errorMessage)
+      if (shouldShowManualEntry) {
+        setManualEntry(true)
+      }
     } finally {
       setCameraRequesting(false)
     }
@@ -285,14 +305,10 @@ export default function QRScanner() {
       return
     }
 
-    // If permission is denied, show alert and manual entry
+    // If permission is denied, directly request again (don't use confirm)
+    // The browser's native prompt will show if permission was cleared
     if (cameraPermission === 'denied') {
-      const retry = confirm('Camera permission was previously denied. Would you like to request access again?\n\nClick OK to retry, or Cancel to use manual entry.')
-      if (retry) {
-        await requestCameraPermission()
-      } else {
-        setManualEntry(true)
-      }
+      await requestCameraPermission()
       return
     }
 
