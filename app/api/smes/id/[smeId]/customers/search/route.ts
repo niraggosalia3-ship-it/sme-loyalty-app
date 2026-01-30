@@ -27,12 +27,13 @@ export async function GET(
 
     // Search customers by email (filtered by SME for data isolation)
     // Use case-insensitive search with contains
+    // Note: PostgreSQL requires the field to be searched in lowercase for case-insensitive search
     const customers = await prisma.customer.findMany({
       where: {
         smeId: params.smeId,
         email: {
           contains: emailQuery,
-          mode: 'insensitive', // Case-insensitive search
+          mode: 'insensitive', // Case-insensitive search (works with PostgreSQL)
         },
       },
       select: {

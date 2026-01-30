@@ -681,6 +681,53 @@ export default function QRScanner() {
     alert(`Benefit "${benefitName}" redeemed successfully!`)
   }
 
+  // Search customers by email with debouncing
+  useEffect(() => {
+    const searchCustomers = async () => {
+      const trimmedEmail = emailSearch.trim()
+      if (!trimmedEmail || trimmedEmail.length < 4) {
+        setEmailSearchResults([])
+        setShowResults(false)
+        return
+      }
+
+      setSearching(true)
+      try {
+        const res = await fetch(`/api/smes/id/${smeId}/customers/search?email=${encodeURIComponent(trimmedEmail)}`)
+        
+        if (res.ok) {
+          const results = await res.json()
+          // Check if results is an array (success) or error object
+          if (Array.isArray(results)) {
+            setEmailSearchResults(results)
+            setShowResults(true) // Show results even if empty (to show "no customers found")
+          } else {
+            // Handle error response
+            console.error('Search API error:', results)
+            setEmailSearchResults([])
+            setShowResults(true) // Show "no customers found" message
+          }
+        } else {
+          // Handle non-OK response
+          const errorData = await res.json().catch(() => ({ error: 'Search failed' }))
+          console.error('Search API error:', errorData)
+          setEmailSearchResults([])
+          setShowResults(true) // Show "no customers found" message
+        }
+      } catch (error) {
+        console.error('Error searching customers:', error)
+        setEmailSearchResults([])
+        setShowResults(true) // Show "no customers found" message
+      } finally {
+        setSearching(false)
+      }
+    }
+
+    // Debounce search - wait 300ms after user stops typing
+    const timeoutId = setTimeout(searchCustomers, 300)
+    return () => clearTimeout(timeoutId)
+  }, [emailSearch, smeId])
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
