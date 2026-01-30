@@ -5,10 +5,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { smeId: string } }
 ) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const emailQuery = searchParams.get('email')?.trim().toLowerCase()
+  const searchParams = request.nextUrl.searchParams
+  const emailQuery = searchParams.get('email')?.trim().toLowerCase()
 
+  try {
     if (!emailQuery || emailQuery.length < 3) {
       return NextResponse.json(
         { error: 'Email query must be at least 3 characters' },
@@ -76,10 +76,15 @@ export async function GET(
     })
 
     return NextResponse.json(sortedCustomers)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error searching customers:', error)
+    console.error('Search query:', emailQuery)
+    console.error('SME ID:', params.smeId)
     return NextResponse.json(
-      { error: 'Failed to search customers' },
+      { 
+        error: 'Failed to search customers',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }
