@@ -64,6 +64,21 @@ export default function QRScanner() {
   const [scanning, setScanning] = useState(false)
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [qrCodeId, setQrCodeId] = useState('')
+  const [emailSearch, setEmailSearch] = useState('')
+  const [emailSearchResults, setEmailSearchResults] = useState<Array<{
+    id: string
+    name: string
+    email: string
+    qrCodeId: string
+    points: number
+    stamps?: number
+    tier: string
+    sme?: {
+      loyaltyType?: string
+    }
+  }>>([])
+  const [searching, setSearching] = useState(false)
+  const [showResults, setShowResults] = useState(false)
   const [manualEntry, setManualEntry] = useState(false)
   const [transactionData, setTransactionData] = useState({
     amount: '',
@@ -393,13 +408,49 @@ export default function QRScanner() {
     }
   }
 
-  const handleManualSubmit = async (e: React.FormEvent) => {
+  const handleEmailSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEmailSearch(value)
+    if (value.trim().length >= 4) {
+      setShowResults(true)
+    } else {
+      setShowResults(false)
+      setEmailSearchResults([])
+    }
+  }
+
+  const handleCustomerSelect = async (selectedCustomer: typeof emailSearchResults[0]) => {
+    setEmailSearch(selectedCustomer.email)
+    setShowResults(false)
+    // Fetch full customer data using QR code ID
+    await fetchCustomer(selectedCustomer.qrCodeId)
+  }
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!qrCodeId.trim()) {
-      alert('Please enter QR code ID')
+    if (!emailSearch.trim()) {
+      alert('Please enter customer email')
       return
     }
-    await fetchCustomer(qrCodeId.trim())
+
+    // If there's exactly one match, use it
+    if (emailSearchResults.length === 1) {
+      await handleCustomerSelect(emailSearchResults[0])
+      return
+    }
+
+    // Otherwise, try to find exact match
+    const exactMatch = emailSearchResults.find(
+      (c) => c.email.toLowerCase() === emailSearch.trim().toLowerCase()
+    )
+
+    if (exactMatch) {
+      await handleCustomerSelect(exactMatch)
+    } else if (emailSearchResults.length > 0) {
+      alert('Please select a customer from the list below')
+    } else {
+      alert('No customer found with that email. Please check the email and try again.')
+    }
   }
 
   const handleTransactionSubmit = async (e: React.FormEvent) => {
@@ -630,6 +681,21 @@ export default function QRScanner() {
     alert(`Benefit "${benefitName}" redeemed successfully!`)
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.email-search-container')) {
+        setShowResults(false)
+      }
+    }
+
+    if (showResults) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showResults])
+
   useEffect(() => {
     // Check if QR code is provided in URL params
     const qrCodeFromUrl = searchParams.get('qrCode')
@@ -703,7 +769,7 @@ export default function QRScanner() {
                   onClick={() => setManualEntry(true)}
                   className="w-full px-4 md:px-6 py-3 md:py-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold text-base"
                 >
-                  Enter QR Code Manually
+                  Search Customer by Email
                 </button>
               </div>
             )}
@@ -721,19 +787,57 @@ export default function QRScanner() {
             )}
 
             {manualEntry && (
-              <form onSubmit={handleManualSubmit} className="space-y-4">
-                <div>
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <div className="relative email-search-container">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Enter QR Code ID
+                    Search Customer by Email
                   </label>
                   <input
-                    type="text"
-                    value={qrCodeId}
-                    onChange={(e) => setQrCodeId(e.target.value.toUpperCase())}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md text-base"
-                    placeholder="CUST-XXXXXXXX"
+                    type="email"
+                    value={emailSearch}
+                    onChange={handleEmailSearchChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter customer email (min 4 characters)"
                     required
+                    autoComplete="off"
                   />
+                  {searching && (
+                    <div className="absolute right-3 top-11">
+                      <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                  
+                  {/* Search Results Dropdown */}
+                  {showResults && emailSearchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {emailSearchResults.map((result) => (
+                        <button
+                          key={result.id}
+                          type="button"
+                          onClick={() => handleCustomerSelect(result)}
+                          className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 focus:outline-none focus:bg-blue-50"
+                        >
+                          <div className="font-medium text-gray-900">{result.name}</div>
+                          <div className="text-sm text-gray-600">{result.email}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {result.sme?.loyaltyType === 'stamps' 
+                              ? `${result.stamps || 0} stamps • ${result.tier}`
+                              : `${result.points || 0} points • ${result.tier}`
+                            }
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {showResults && emailSearchResults.length === 0 && !searching && emailSearch.trim().length >= 4 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-4 text-center text-gray-500">
+                      No customers found matching "{emailSearch}"
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
@@ -746,7 +850,9 @@ export default function QRScanner() {
                     type="button"
                     onClick={() => {
                       setManualEntry(false)
-                      setQrCodeId('')
+                      setEmailSearch('')
+                      setEmailSearchResults([])
+                      setShowResults(false)
                     }}
                     className="w-full sm:w-auto px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-base"
                   >
