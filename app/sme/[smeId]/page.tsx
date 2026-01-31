@@ -430,14 +430,26 @@ export default function SMEDashboard() {
                         <YAxis
                           yAxisId="customers"
                           orientation="left"
-                          label={{ value: 'Customers', angle: -90, position: 'insideLeft' }}
-                          tick={{ fontSize: 12 }}
+                          label={{ 
+                            value: 'Customers', 
+                            angle: -90, 
+                            position: 'insideLeft',
+                            style: { fontSize: 12, fill: '#3B82F6', fontWeight: 'bold' }
+                          }}
+                          tick={{ fontSize: 12, fill: '#3B82F6' }}
+                          stroke="#3B82F6"
                         />
                         <YAxis
                           yAxisId="transactions"
                           orientation="right"
-                          label={{ value: 'Transactions', angle: 90, position: 'insideRight' }}
-                          tick={{ fontSize: 12 }}
+                          label={{ 
+                            value: 'Transactions', 
+                            angle: 90, 
+                            position: 'insideRight',
+                            style: { fontSize: 12, fill: '#10B981', fontWeight: 'bold' }
+                          }}
+                          tick={{ fontSize: 12, fill: '#10B981' }}
+                          stroke="#10B981"
                         />
                         <Tooltip
                           contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '4px' }}
