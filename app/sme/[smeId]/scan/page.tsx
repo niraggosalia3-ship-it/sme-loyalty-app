@@ -168,6 +168,9 @@ export default function QRScanner() {
       await startScanningWithPermission()
     } catch (error: any) {
       console.error('Camera permission error:', error)
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
+      console.error('Full error:', JSON.stringify(error, null, 2))
       
       let errorMessage = 'Could not access camera.'
       let shouldShowManualEntry = false
@@ -175,7 +178,16 @@ export default function QRScanner() {
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setCameraPermission('denied')
         localStorage.setItem('qr_scanner_camera_permission', 'denied')
-        errorMessage = 'Camera permission was denied.\n\nTo fix:\n1. Look for a camera icon in your browser\'s address bar\n2. Click it and select "Allow"\n3. Click the scan button again to retry\n\nOr use "Search Customer by Email" below if you prefer.'
+        
+        // Provide detailed instructions for Chrome
+        const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)
+        const currentUrl = window.location.hostname
+        
+        if (isChrome) {
+          errorMessage = `Camera permission was denied for this website.\n\nChrome has camera permission, but this website needs its own permission.\n\nTo fix:\n1. Look for a camera icon (📷) or lock icon (🔒) in Chrome's address bar\n2. Click it to open site settings\n3. Find "Camera" and change it from "Block" to "Allow"\n4. Refresh this page and try again\n\nOr use "Search Customer by Email" below if you prefer.\n\nCurrent site: ${currentUrl}`
+        } else {
+          errorMessage = 'Camera permission was denied.\n\nTo fix:\n1. Look for a camera icon in your browser\'s address bar\n2. Click it and select "Allow"\n3. Refresh the page and try again\n\nOr use "Search Customer by Email" below if you prefer.'
+        }
         // Don't automatically switch to manual entry - let user retry or choose manually
         shouldShowManualEntry = false
       } else if (error.name === 'NotFoundError') {
