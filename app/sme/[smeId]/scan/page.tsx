@@ -101,23 +101,27 @@ export default function QRScanner() {
 
   const checkCameraPermission = async () => {
     try {
-      // Check localStorage first for saved preference
+      // Only check for 'granted' - never cache 'denied' as it blocks retries
       const savedPermission = localStorage.getItem('qr_scanner_camera_permission')
       if (savedPermission === 'granted') {
         setCameraPermission('granted')
         return
       }
       
-      // Don't check Permissions API for 'denied' state on mount
-      // This prevents blocking getUserMedia from showing the prompt
-      // Only check if it's 'granted' - otherwise always start as 'prompt'
-      // The actual permission request happens when user clicks the button
-      // getUserMedia is the ONLY reliable way to trigger browser permission prompts
+      // Always start as 'prompt' - let getUserMedia handle the actual permission
       setCameraPermission('prompt')
     } catch (error) {
       console.error('Error checking camera permission:', error)
       setCameraPermission('prompt')
     }
+  }
+
+  // Reset all camera permissions - for debugging and recovery
+  const resetCameraPermissions = () => {
+    localStorage.removeItem('qr_scanner_camera_permission')
+    setCameraPermission('prompt')
+    setCameraRequesting(false)
+    alert('Camera permissions reset. Please try again.')
   }
 
   const requestCameraPermission = async () => {
@@ -194,19 +198,20 @@ export default function QRScanner() {
       let shouldShowManualEntry = false
       
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        setCameraPermission('denied')
-        localStorage.setItem('qr_scanner_camera_permission', 'denied')
+        // DON'T cache 'denied' - it prevents retries
+        // Just set to 'prompt' so user can try again
+        setCameraPermission('prompt')
         
-        // Provide detailed instructions for Chrome
+        // Provide detailed instructions
         const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)
         const currentUrl = window.location.hostname
+        const fullUrl = window.location.origin
         
         if (isChrome) {
-          errorMessage = `Camera permission was denied for this website.\n\nChrome has camera permission, but this website needs its own permission.\n\nTo fix:\n1. Look for a camera icon (📷) or lock icon (🔒) in Chrome's address bar\n2. Click it to open site settings\n3. Find "Camera" and change it from "Block" to "Allow"\n4. Refresh this page and try again\n\nOr use "Search Customer by Email" below if you prefer.\n\nCurrent site: ${currentUrl}`
+          errorMessage = `Camera permission was denied.\n\nChrome needs permission for THIS website specifically.\n\nTo fix:\n1. Click the lock icon (🔒) or info icon (i) in Chrome's address bar\n2. Find "Camera" in the permissions list\n3. Change it from "Block" to "Ask" or "Allow"\n4. Click "Reset permissions" button below if needed\n5. Try the scan button again\n\nSite: ${fullUrl}\n\nOr use "Search Customer by Email" below.`
         } else {
-          errorMessage = 'Camera permission was denied.\n\nTo fix:\n1. Look for a camera icon in your browser\'s address bar\n2. Click it and select "Allow"\n3. Refresh the page and try again\n\nOr use "Search Customer by Email" below if you prefer.'
+          errorMessage = 'Camera permission was denied.\n\nTo fix:\n1. Look for a camera or lock icon in your browser\'s address bar\n2. Click it and select "Allow"\n3. Try the scan button again\n\nOr use "Search Customer by Email" below.'
         }
-        // Don't automatically switch to manual entry - let user retry or choose manually
         shouldShowManualEntry = false
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'No camera found on this device. Please use manual entry.'
@@ -792,10 +797,16 @@ export default function QRScanner() {
                   </div>
                 )}
                 {cameraPermission === 'denied' && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center space-y-2">
                     <p className="text-sm text-yellow-800">
-                      ⚠ Camera access denied - Click below to request again or use manual entry
+                      ⚠ Camera access denied - Click below to request again
                     </p>
+                    <button
+                      onClick={resetCameraPermissions}
+                      className="text-xs text-yellow-700 underline hover:text-yellow-900"
+                    >
+                      Reset Permissions
+                    </button>
                   </div>
                 )}
                 
