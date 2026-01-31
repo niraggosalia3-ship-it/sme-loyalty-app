@@ -158,8 +158,10 @@ export default function QRScanner() {
       }
 
       // Clear any previous denied state to allow retry
+      // This allows the browser to show the permission prompt again
       if (cameraPermission === 'denied') {
         localStorage.removeItem('qr_scanner_camera_permission')
+        setCameraPermission('prompt') // Reset to prompt state so browser can ask again
       }
 
       // Request camera permission - this will trigger browser's native prompt
@@ -191,8 +193,9 @@ export default function QRScanner() {
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setCameraPermission('denied')
         localStorage.setItem('qr_scanner_camera_permission', 'denied')
-        errorMessage = 'Camera permission was denied.\n\nTo fix:\n1. Look for a camera icon in your browser\'s address bar\n2. Click it and select "Allow"\n3. Refresh the page and try again\n\nOr use manual entry below.'
-        shouldShowManualEntry = true
+        errorMessage = 'Camera permission was denied.\n\nTo fix:\n1. Look for a camera icon in your browser\'s address bar\n2. Click it and select "Allow"\n3. Click the scan button again to retry\n\nOr use "Search Customer by Email" below if you prefer.'
+        // Don't automatically switch to manual entry - let user retry or choose manually
+        shouldShowManualEntry = false
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'No camera found on this device. Please use manual entry.'
         shouldShowManualEntry = true
