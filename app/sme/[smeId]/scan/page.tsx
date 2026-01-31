@@ -145,14 +145,32 @@ export default function QRScanner() {
       localStorage.removeItem('qr_scanner_camera_permission')
       setCameraPermission('prompt') // Reset to prompt state
 
+      // Log diagnostic info
+      console.log('Requesting camera permission...')
+      console.log('Protocol:', window.location.protocol)
+      console.log('Hostname:', window.location.hostname)
+      console.log('User Agent:', navigator.userAgent)
+      
+      // Check current permission state (for debugging)
+      if ('permissions' in navigator && 'query' in navigator.permissions) {
+        try {
+          const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName })
+          console.log('Current camera permission state:', permissionStatus.state)
+        } catch (e) {
+          console.log('Could not query permission state:', e)
+        }
+      }
+
       // Request camera permission - this will trigger browser's native prompt
       // getUserMedia is the ONLY way to trigger the browser's permission prompt
       // Even if Permissions API says 'denied', getUserMedia might still show a prompt
+      console.log('Calling getUserMedia...')
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'environment' // Use back camera on mobile
         } 
       })
+      console.log('getUserMedia succeeded! Stream:', stream)
       
       // Permission granted - stop the test stream
       stream.getTracks().forEach(track => track.stop())
