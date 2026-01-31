@@ -340,14 +340,8 @@ export default function QRScanner() {
       return
     }
 
-    // If permission is denied, directly request again (don't use confirm)
-    // The browser's native prompt will show if permission was cleared
-    if (cameraPermission === 'denied') {
-      await requestCameraPermission()
-      return
-    }
-
-    // If permission is unknown or prompt, request it
+    // Always try to request permission - don't check state
+    // getUserMedia will handle the actual permission request
     await requestCameraPermission()
   }
 
