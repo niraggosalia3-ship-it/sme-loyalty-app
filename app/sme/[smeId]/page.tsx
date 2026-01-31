@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import QRCode from 'react-qr-code'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
 
 interface Customer {
   id: string
@@ -51,12 +61,36 @@ export default function SMEDashboard() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false)
   const [generatingApiKey, setGeneratingApiKey] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
+  
+  // Analytics state
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<'ytd' | 'launch' | 'lastYear'>('ytd')
+  const [analytics, setAnalytics] = useState<{
+    summary: {
+      totalCustomers: number
+      totalTransactions: number
+      totalBenefitsRedeemed: number
+      customerRepeatRate: number
+    }
+    weeklyTrends: Array<{
+      week: string
+      weekStart: Date
+      customers: number
+      transactions: number
+    }>
+  } | null>(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   useEffect(() => {
     fetchSME()
     fetchCustomers()
     fetchAPIKey()
   }, [smeId])
+
+  useEffect(() => {
+    if (smeId) {
+      fetchAnalytics()
+    }
+  }, [smeId, analyticsPeriod])
 
   const fetchAPIKey = async () => {
     try {
@@ -216,6 +250,23 @@ export default function SMEDashboard() {
     setEditFormData({})
   }
 
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true)
+    try {
+      const res = await fetch(`/api/smes/id/${smeId}/analytics?period=${analyticsPeriod}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAnalytics(data)
+      } else {
+        console.error('Failed to fetch analytics')
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }
+
 
   if (loading) {
     return (
@@ -296,6 +347,132 @@ export default function SMEDashboard() {
             </Link>
           </div>
           </div>
+          </div>
+
+          {/* Analytics Section */}
+          <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Program Analytics</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAnalyticsPeriod('ytd')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    analyticsPeriod === 'ytd'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Year to Date
+                </button>
+                <button
+                  onClick={() => setAnalyticsPeriod('launch')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    analyticsPeriod === 'launch'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Launch to Date
+                </button>
+                <button
+                  onClick={() => setAnalyticsPeriod('lastYear')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    analyticsPeriod === 'lastYear'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Last Year
+                </button>
+              </div>
+            </div>
+
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-gray-600">Loading analytics...</div>
+              </div>
+            ) : analytics ? (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="text-sm font-medium text-blue-600 mb-1">Total Customers</div>
+                    <div className="text-3xl font-bold text-blue-900">{analytics.summary.totalCustomers.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="text-sm font-medium text-green-600 mb-1">Total Transactions</div>
+                    <div className="text-3xl font-bold text-green-900">{analytics.summary.totalTransactions.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div className="text-sm font-medium text-purple-600 mb-1">Benefits Redeemed</div>
+                    <div className="text-3xl font-bold text-purple-900">{analytics.summary.totalBenefitsRedeemed.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="text-sm font-medium text-orange-600 mb-1">Customer Repeat Rate</div>
+                    <div className="text-3xl font-bold text-orange-900">{analytics.summary.customerRepeatRate}%</div>
+                  </div>
+                </div>
+
+                {/* Weekly Trends Chart */}
+                {analytics.weeklyTrends.length > 0 ? (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Trends (Cumulative)</h3>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={analytics.weeklyTrends}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="week"
+                          tick={{ fontSize: 12 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                        />
+                        <YAxis
+                          yAxisId="customers"
+                          orientation="left"
+                          label={{ value: 'Customers', angle: -90, position: 'insideLeft' }}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis
+                          yAxisId="transactions"
+                          orientation="right"
+                          label={{ value: 'Transactions', angle: 90, position: 'insideRight' }}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '4px' }}
+                        />
+                        <Legend />
+                        <Line
+                          yAxisId="customers"
+                          type="monotone"
+                          dataKey="customers"
+                          stroke="#3B82F6"
+                          strokeWidth={2}
+                          name="Cumulative Customers"
+                          dot={{ r: 4 }}
+                        />
+                        <Line
+                          yAxisId="transactions"
+                          type="monotone"
+                          dataKey="transactions"
+                          stroke="#10B981"
+                          strokeWidth={2}
+                          name="Cumulative Transactions"
+                          dot={{ r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
+                    No data available for the selected period
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center text-gray-500 py-8">No analytics data available</div>
+            )}
           </div>
 
         {/* API Key Section */}
