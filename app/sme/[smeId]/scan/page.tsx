@@ -108,30 +108,12 @@ export default function QRScanner() {
         return
       }
       
-      // Check if Permissions API is supported (non-intrusive check)
-      if ('permissions' in navigator && 'query' in navigator.permissions) {
-        try {
-          const result = await navigator.permissions.query({ name: 'camera' as PermissionName })
-          setCameraPermission(result.state)
-          
-          // Listen for permission changes
-          result.addEventListener('change', () => {
-            setCameraPermission(result.state)
-            if (result.state === 'granted') {
-              localStorage.setItem('qr_scanner_camera_permission', 'granted')
-            } else if (result.state === 'denied') {
-              localStorage.setItem('qr_scanner_camera_permission', 'denied')
-            }
-          })
-        } catch (e) {
-          // Permissions API might not support camera query on all browsers
-          // Don't try to access camera automatically - wait for user to click
-          setCameraPermission('prompt')
-        }
-      } else {
-        // Permissions API not available - wait for user to click
-        setCameraPermission('prompt')
-      }
+      // Don't check Permissions API for 'denied' state on mount
+      // This prevents blocking getUserMedia from showing the prompt
+      // Only check if it's 'granted' - otherwise always start as 'prompt'
+      // The actual permission request happens when user clicks the button
+      // getUserMedia is the ONLY reliable way to trigger browser permission prompts
+      setCameraPermission('prompt')
     } catch (error) {
       console.error('Error checking camera permission:', error)
       setCameraPermission('prompt')
@@ -157,15 +139,15 @@ export default function QRScanner() {
         return
       }
 
-      // Clear any previous denied state to allow retry
+      // IMPORTANT: Always clear cached denied state when user explicitly requests permission
       // This allows the browser to show the permission prompt again
-      if (cameraPermission === 'denied') {
-        localStorage.removeItem('qr_scanner_camera_permission')
-        setCameraPermission('prompt') // Reset to prompt state so browser can ask again
-      }
+      // The Permissions API might say 'denied', but getUserMedia can still trigger a prompt
+      localStorage.removeItem('qr_scanner_camera_permission')
+      setCameraPermission('prompt') // Reset to prompt state
 
       // Request camera permission - this will trigger browser's native prompt
-      // Use simpler constraints to avoid OverconstrainedError
+      // getUserMedia is the ONLY way to trigger the browser's permission prompt
+      // Even if Permissions API says 'denied', getUserMedia might still show a prompt
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'environment' // Use back camera on mobile
